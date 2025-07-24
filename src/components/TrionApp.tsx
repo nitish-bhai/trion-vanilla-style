@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import placeholderImage from '@/assets/trion-placeholder.jpg';
 
@@ -22,7 +22,19 @@ const TrionApp = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<React.ReactNode>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('hf_api_key') || '');
+  const [isProcessingTryOn, setIsProcessingTryOn] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Save API key to localStorage when it changes
+  useEffect(() => {
+    if (apiKey) {
+      localStorage.setItem('hf_api_key', apiKey);
+    } else {
+      localStorage.removeItem('hf_api_key');
+    }
+  }, [apiKey]);
 
   // Generate products on mount
   useEffect(() => {
@@ -84,6 +96,122 @@ const TrionApp = () => {
     });
   };
 
+  // Convert image file to base64
+  const imageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result.split(',')[1]); // Remove data:image/... prefix
+        } else {
+          reject(new Error('Failed to read file'));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Call Hugging Face Virtual Try-On API
+  const callTryOnAPI = async (userImageFile: File, product: Product) => {
+    if (!apiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your Hugging Face API key to use virtual try-on",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessingTryOn(true);
+    
+    try {
+      // Convert user image to base64
+      const userImageBase64 = await imageToBase64(userImageFile);
+      
+      const response = await fetch(
+        'https://api-inference.huggingface.co/models/Kwai-Kolors/Kolors-Virtual-Try-On',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            image_user: userImageBase64,
+            image_garment: product.image
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const tryOnImageUrl = URL.createObjectURL(blob);
+
+      // Show result in modal
+      setModalContent(
+        <div className="text-center">
+          <h3 className="text-2xl font-semibold mb-4 text-slate-800">Virtual Try-On Result</h3>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Original</p>
+              <img 
+                src={URL.createObjectURL(userImageFile)} 
+                alt="Original"
+                className="w-full rounded-lg shadow-lg"
+              />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Try-On Result</p>
+              <img 
+                src={tryOnImageUrl} 
+                alt="Try-On Result"
+                className="w-full rounded-lg shadow-lg"
+              />
+            </div>
+          </div>
+          <h4 className="text-xl font-medium mb-2">{product.name}</h4>
+          <p className="text-gray-600 mb-6">₹{product.price.toLocaleString()}</p>
+          <div className="flex gap-3 justify-center">
+            <button 
+              className="trion-btn"
+              onClick={() => {
+                addToCart(product.id);
+                setIsModalOpen(false);
+              }}
+            >
+              Buy Now - ₹{product.price}
+            </button>
+            <button 
+              className="trion-btn-secondary trion-btn"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      );
+
+      toast({
+        title: "Try-On Complete!",
+        description: "Your virtual try-on result is ready",
+      });
+
+    } catch (error) {
+      console.error('Try-on error:', error);
+      toast({
+        title: "Try-On Failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingTryOn(false);
+    }
+  };
+
   const openTryOn = (productId: number) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
@@ -91,6 +219,26 @@ const TrionApp = () => {
     setModalContent(
       <div className="text-center">
         <h3 className="text-2xl font-semibold mb-4 text-slate-800">Virtual Try-On</h3>
+        
+        {/* API Key Input */}
+        {!apiKey && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 mb-3">
+              Enter your Hugging Face API key to use virtual try-on
+            </p>
+            <input
+              type="password"
+              placeholder="hf_xxxxxxxxxxxxxxxxxxxx"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded text-sm"
+            />
+            <p className="text-xs text-gray-600 mt-2">
+              Get your API key from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Hugging Face</a>
+            </p>
+          </div>
+        )}
+
         <div className="mb-6">
           <img 
             src={product.image} 
@@ -98,8 +246,43 @@ const TrionApp = () => {
             className="w-full max-w-xs mx-auto rounded-lg shadow-lg"
           />
         </div>
+        
         <h4 className="text-xl font-medium mb-2">{product.name}</h4>
         <p className="text-gray-600 mb-6">{product.description}</p>
+        
+        {/* Upload Image for Try-On */}
+        <div className="mb-6">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && apiKey) {
+                callTryOnAPI(file, product);
+              }
+            }}
+            className="hidden"
+          />
+          <button 
+            className="trion-btn mb-3"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!apiKey || isProcessingTryOn}
+          >
+            {isProcessingTryOn ? (
+              <>
+                <div className="trion-spinner inline-block mr-2"></div>
+                Processing...
+              </>
+            ) : (
+              'Upload Photo & Try On'
+            )}
+          </button>
+          <p className="text-xs text-gray-600">
+            Upload a photo of yourself to see how this item looks on you
+          </p>
+        </div>
+
         <div className="flex gap-3 justify-center">
           <button 
             className="trion-btn"
