@@ -1,42 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* TRION Fashion Design System */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* TRION Brand Colors */
+    --background: 220 20% 96%; /* #F0F2F4 off-white */
+    --foreground: 200 20% 20%; /* #2F3E46 slate */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%; /* white */
+    --card-foreground: 200 20% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 200 20% 20%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 181 44% 63%; /* #4FBFC1 teal */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 20% 96%;
+    --secondary-foreground: 200 20% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 20% 94%;
+    --muted-foreground: 200 12% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 181 44% 63%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 20% 88%;
+    --input: 220 20% 88%;
+    --ring: 181 44% 63%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* TRION Custom Tokens */
+    --trion-teal: 181 44% 63%; /* #4FBFC1 */
+    --trion-teal-hover: 181 54% 53%; /* darker teal */
+    --trion-slate: 200 20% 20%; /* #2F3E46 */
+    --trion-off-white: 220 20% 96%; /* #F0F2F4 */
+    
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(var(--trion-teal)), hsl(var(--trion-teal-hover)));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 20% 98%));
+    
+    /* Shadows */
+    --shadow-card: 0 4px 12px rgba(47, 62, 70, 0.08);
+    --shadow-card-hover: 0 8px 20px rgba(47, 62, 70, 0.12);
+    --shadow-button: 0 2px 8px rgba(79, 191, 193, 0.2);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 98%;
 
@@ -97,9 +117,160 @@ All colors MUST be HSL.
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+  /* TRION Product Cards */
+  .trion-card {
+    background: var(--gradient-card);
+    border-radius: var(--radius);
+    padding: 1rem;
+    box-shadow: var(--shadow-card);
+    transition: var(--transition-smooth);
+    border: 1px solid hsl(var(--border));
+  }
+  
+  .trion-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+  }
+  
+  .trion-card img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+    border-radius: calc(var(--radius) - 4px);
+    margin-bottom: 0.75rem;
+  }
+  
+  /* TRION Buttons */
+  .trion-btn {
+    background: var(--gradient-hero);
+    color: hsl(var(--primary-foreground));
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-bounce);
+    box-shadow: var(--shadow-button);
+    font-family: inherit;
+  }
+  
+  .trion-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 191, 193, 0.3);
+    background: hsl(var(--trion-teal-hover));
+  }
+  
+  .trion-btn:active {
+    transform: translateY(0);
+  }
+  
+  .trion-btn-secondary {
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    box-shadow: 0 2px 8px rgba(47, 62, 70, 0.1);
+  }
+  
+  .trion-btn-secondary:hover {
+    background: hsl(var(--muted));
+    box-shadow: 0 4px 12px rgba(47, 62, 70, 0.15);
+  }
+  
+  /* TRION Modal */
+  .trion-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(47, 62, 70, 0.8);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .trion-modal-overlay.active {
+    opacity: 1;
+  }
+  
+  .trion-modal {
+    background: hsl(var(--card));
+    border-radius: calc(var(--radius) + 4px);
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    transform: translateY(-20px) scale(0.95);
+    transition: var(--transition-smooth);
+    box-shadow: 0 20px 40px rgba(47, 62, 70, 0.2);
+  }
+  
+  .trion-modal-overlay.active .trion-modal {
+    transform: translateY(0) scale(1);
+  }
+  
+  /* TRION Grid */
+  .trion-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    padding: 1rem;
+  }
+  
+  /* TRION Search */
+  .trion-search {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--border));
+    border-radius: 999px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: var(--transition-smooth);
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .trion-search:focus {
+    outline: none;
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px rgba(79, 191, 193, 0.1);
+  }
+  
+  /* TRION Animations */
+  @keyframes trion-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  @keyframes trion-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  
+  .trion-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid hsl(var(--muted));
+    border-top: 2px solid hsl(var(--primary));
+    border-radius: 50%;
+    animation: trion-spin 1s linear infinite;
+  }
+  
+  .trion-loading {
+    animation: trion-pulse 2s ease-in-out infinite;
   }
 }
