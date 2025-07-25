@@ -64,10 +64,17 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
   }, [products, userPreferences]);
 
   const generateRecommendations = () => {
+    // Ensure we have products before generating recommendations
+    if (!products || products.length === 0) {
+      console.log('No products available for recommendations');
+      return;
+    }
+
     // Simulate trending products (highest rated or most popular)
     const trending = products
+      .filter(product => product.rating && product.rating >= 4)
       .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      .slice(0, 8);
+      .slice(0, 12); // Increased to 12 products
 
     // Generate personalized recommendations based on user preferences
     const forYou = products
@@ -82,7 +89,7 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
         );
         return categoryMatch || colorMatch;
       })
-      .slice(0, 8);
+      .slice(0, 12); // Increased to 12 products
 
     // Similar to browsing history
     const similarToViewed = products
@@ -92,12 +99,14 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
           product.name.toLowerCase().includes(item)
         );
       })
-      .slice(0, 8);
+      .slice(0, 12); // Increased to 12 products
 
-    // New arrivals (simulate with random selection)
+    // New arrivals (simulate with recent products - last 12)
     const newArrivals = products
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 8);
+      .slice(-12)
+      .reverse(); // Show newest first
+
+    console.log('Generated recommendations:', { trending: trending.length, forYou: forYou.length, similarToViewed: similarToViewed.length, newArrivals: newArrivals.length });
 
     setRecommendations({
       trending,
@@ -243,7 +252,7 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
         {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         {products.map((product, index) => (
           <ProductCard key={product.id} product={product} index={index} />
         ))}
@@ -329,23 +338,51 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
       </motion.div>
 
       {/* Hot Deals */}
-      {recommendations.trending.length > 0 && (
+      {recommendations.trending.length > 0 ? (
         <RecommendationSection
           title="🔥 Hot Deals & Trending"
           subtitle="Most popular items with amazing discounts"
           products={recommendations.trending}
-          gradient="from-orange-100 to-red-50"
+          gradient="from-primary/20 to-primary/10"
         />
+      ) : (
+        <div className="mb-12 text-center py-8">
+          <div className="animate-pulse">
+            <div className="bg-primary/10 rounded-lg p-6 mb-6">
+              <div className="h-8 bg-primary/20 rounded w-64 mx-auto mb-2"></div>
+              <div className="h-4 bg-primary/10 rounded w-96 mx-auto"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="bg-primary/5 rounded-lg h-64 animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Personalized Recommendations */}
-      {recommendations.forYou.length > 0 && (
+      {recommendations.forYou.length > 0 ? (
         <RecommendationSection
           title="✨ Recommended For You"
           subtitle="Curated based on your preferences and browsing history"
           products={recommendations.forYou}
-          gradient="from-primary/15 to-accent/10"
+          gradient="from-primary/15 to-primary/5"
         />
+      ) : (
+        <div className="mb-12 text-center py-8">
+          <div className="animate-pulse">
+            <div className="bg-primary/10 rounded-lg p-6 mb-6">
+              <div className="h-8 bg-primary/20 rounded w-64 mx-auto mb-2"></div>
+              <div className="h-4 bg-primary/10 rounded w-96 mx-auto"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="bg-primary/5 rounded-lg h-64 animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Today's Special Offers */}
@@ -403,23 +440,51 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
       </motion.div>
 
       {/* Similar to Viewed */}
-      {recommendations.similarToViewed.length > 0 && (
+      {recommendations.similarToViewed.length > 0 ? (
         <RecommendationSection
           title="👀 Similar to What You've Viewed"
           subtitle="More items like your recent interests"
           products={recommendations.similarToViewed}
-          gradient="from-blue-50 to-indigo-50"
+          gradient="from-primary/10 to-primary/5"
         />
+      ) : (
+        <div className="mb-12 text-center py-8">
+          <div className="animate-pulse">
+            <div className="bg-primary/10 rounded-lg p-6 mb-6">
+              <div className="h-8 bg-primary/20 rounded w-64 mx-auto mb-2"></div>
+              <div className="h-4 bg-primary/10 rounded w-96 mx-auto"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="bg-primary/5 rounded-lg h-64 animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* New Arrivals */}
-      {recommendations.newArrivals.length > 0 && (
+      {recommendations.newArrivals.length > 0 ? (
         <RecommendationSection
           title="🆕 New Arrivals"
           subtitle="Fresh styles just in - be the first to own them"
           products={recommendations.newArrivals}
-          gradient="from-green-50 to-emerald-50"
+          gradient="from-primary/8 to-primary/3"
         />
+      ) : (
+        <div className="mb-12 text-center py-8">
+          <div className="animate-pulse">
+            <div className="bg-primary/10 rounded-lg p-6 mb-6">
+              <div className="h-8 bg-primary/20 rounded w-64 mx-auto mb-2"></div>
+              <div className="h-4 bg-primary/10 rounded w-96 mx-auto"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="bg-primary/5 rounded-lg h-64 animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Featured Brands */}

@@ -108,33 +108,8 @@ function ProductCarousel() {
                 transition={{ duration: 0.8 }}
               />
               
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              
-              {/* Product Info */}
-              <motion.div 
-                className="absolute bottom-6 left-6 right-6 text-white"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-              >
-                <div className="inline-block bg-primary px-3 py-1 rounded-full text-sm font-semibold mb-2">
-                  {product.promotion}
-                </div>
-                <h3 className="text-2xl font-bold mb-1">{product.title}</h3>
-                <p className="text-primary-foreground/90 font-medium mb-1">{product.feature}</p>
-                <p className="text-sm text-primary-foreground/80">{product.description}</p>
-              </motion.div>
-
-              {/* Feature Badge */}
-              <motion.div 
-                className="absolute top-6 right-6 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20"
-                initial={{ x: 20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-              >
-                <span className="text-white text-sm font-medium">NEW</span>
-              </motion.div>
+              {/* Simple Gradient Overlay for Better Visual */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
             </div>
           </div>
         ))}
