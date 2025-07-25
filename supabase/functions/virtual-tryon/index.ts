@@ -28,7 +28,7 @@ serve(async (req) => {
   }
 
   try {
-    const { personImageBase64, garmentImageUrl } = await req.json()
+    const { personImageBase64, garmentImageUrl, category = "Upper body" } = await req.json()
 
     if (!personImageBase64 || !garmentImageUrl) {
       return new Response(
@@ -53,7 +53,7 @@ serve(async (req) => {
     const requestBody = {
       model_image: personImageBase64,
       cloth_image: garmentImageBase64,
-      category: "Upper body",
+      category: category,
       num_inference_steps: 25,
       guidance_scale: 2,
       seed: Math.floor(Math.random() * 999999999),

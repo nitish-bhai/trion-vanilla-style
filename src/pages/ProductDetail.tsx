@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Star, ArrowLeft, ShoppingCart, Heart, Share2, Shirt } from 'lucide-react';
 import placeholderImage from '@/assets/trion-placeholder.jpg';
 
@@ -55,6 +56,7 @@ const ProductDetail = () => {
   const [userImage, setUserImage] = useState<File | null>(null);
   const [tryOnResult, setTryOnResult] = useState<string | null>(null);
   const [isTryOnLoading, setIsTryOnLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('Upper body');
 
   useEffect(() => {
     // Simulate API call
@@ -184,10 +186,14 @@ const ProductDetail = () => {
     try {
       const personImageBase64 = await imageToBase64(userImage);
       
+      // Convert the relative image path to a full URL
+      const garmentImageUrl = new URL(product.image, window.location.origin).href;
+      
       const { data, error } = await supabase.functions.invoke('virtual-tryon', {
         body: {
           personImageBase64,
-          garmentImageUrl: product.image,
+          garmentImageUrl,
+          category: selectedCategory,
         },
       });
 
@@ -388,6 +394,19 @@ const ProductDetail = () => {
                             />
                           </div>
                         )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold mb-2">Category</h3>
+                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Upper body">Upper Body</SelectItem>
+                            <SelectItem value="Lower body">Lower Body</SelectItem>
+                            <SelectItem value="Dress">Dress</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <Button 
                         onClick={handleTryOn} 
