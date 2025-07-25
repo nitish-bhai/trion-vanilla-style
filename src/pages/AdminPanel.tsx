@@ -5,7 +5,7 @@ import {
   BarChart3, 
   Users, 
   Package, 
-  Settings, 
+  Settings as SettingsIcon, 
   LogOut,
   Home,
   ShoppingBag
@@ -17,6 +17,9 @@ import { useToast } from '@/hooks/use-toast';
 import AdminStats from '@/components/admin/AdminStats';
 import ProductManagement from '@/components/admin/ProductManagement';
 import UserManagement from '@/components/admin/UserManagement';
+import OrderManagement from '@/components/admin/OrderManagement';
+import Analytics from '@/components/admin/Analytics';
+import Settings from '@/components/admin/Settings';
 
 type User = {
   id: string;
@@ -141,7 +144,8 @@ const AdminPanel: React.FC = () => {
     { id: 'products', label: 'Products', icon: Package },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'orders', label: 'Orders', icon: ShoppingBag },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
   if (loading) {
@@ -315,25 +319,11 @@ const AdminPanel: React.FC = () => {
             
             {activeTab === 'users' && <UserManagement />}
             
-            {activeTab === 'orders' && (
-              <div>
-                <h1 className="text-3xl font-bold text-foreground mb-8">Order Management</h1>
-                <div className="bg-card rounded-lg border border-border p-8 text-center">
-                  <ShoppingBag className="mx-auto text-muted-foreground mb-4" size={48} />
-                  <p className="text-muted-foreground">Order management coming soon...</p>
-                </div>
-              </div>
-            )}
+            {activeTab === 'orders' && <OrderManagement />}
             
-            {activeTab === 'settings' && (
-              <div>
-                <h1 className="text-3xl font-bold text-foreground mb-8">Settings</h1>
-                <div className="bg-card rounded-lg border border-border p-8 text-center">
-                  <Settings className="mx-auto text-muted-foreground mb-4" size={48} />
-                  <p className="text-muted-foreground">Settings panel coming soon...</p>
-                </div>
-              </div>
-            )}
+            {activeTab === 'analytics' && <Analytics />}
+            
+            {activeTab === 'settings' && <Settings />}
           </motion.div>
         </main>
       </div>
