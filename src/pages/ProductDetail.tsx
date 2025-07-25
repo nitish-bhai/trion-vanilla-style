@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Star, ArrowLeft, ShoppingCart, Heart, Share2, Shirt } from 'lucide-react';
 import placeholderImage from '@/assets/trion-placeholder.jpg';
 
@@ -335,14 +335,32 @@ const ProductDetail = () => {
                     Virtual Try-On
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Virtual Try-On - {product.name}</DialogTitle>
+                    <DialogDescription>
+                      Upload your full body image to see how this item looks on you
+                    </DialogDescription>
                   </DialogHeader>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Selected Product */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold mb-2">Selected Item</h3>
+                      <div className="bg-muted rounded-lg p-4">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full aspect-square object-cover rounded-lg mb-2"
+                        />
+                        <p className="text-sm font-medium">{product.name}</p>
+                        <p className="text-sm text-muted-foreground">₹{product.price.toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    {/* User Upload */}
                     <div className="space-y-4">
                       <div>
-                        <h3 className="font-semibold mb-2">Upload Your Photo</h3>
+                        <h3 className="font-semibold mb-2">Upload Your Full Body Photo</h3>
                         <input
                           type="file"
                           accept="image/*"
@@ -354,7 +372,7 @@ const ProductDetail = () => {
                             <img
                               src={URL.createObjectURL(userImage)}
                               alt="User upload"
-                              className="w-full max-w-xs rounded-lg object-cover"
+                              className="w-full aspect-square object-cover rounded-lg"
                             />
                           </div>
                         )}
@@ -373,18 +391,26 @@ const ProductDetail = () => {
                           'Try On This Item'
                         )}
                       </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Note: You need a valid Segmind API key. The current key appears to be invalid.
+                      </p>
                     </div>
+
+                    {/* Result */}
                     <div className="space-y-4">
-                      <h3 className="font-semibold">Result</h3>
+                      <h3 className="font-semibold">Virtual Try-On Result</h3>
                       {tryOnResult ? (
                         <img
                           src={tryOnResult}
                           alt="Try-on result"
-                          className="w-full rounded-lg object-cover"
+                          className="w-full aspect-square object-cover rounded-lg"
                         />
                       ) : (
-                        <div className="w-full h-96 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
-                          Your try-on result will appear here
+                        <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center text-muted-foreground text-center p-4">
+                          <div>
+                            <Shirt className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">Your virtual try-on result will appear here</p>
+                          </div>
                         </div>
                       )}
                     </div>
