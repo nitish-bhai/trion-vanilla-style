@@ -168,12 +168,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ searchComponent }) => {
         {/* Overlay Search Bar */}
         {searchComponent && (
           <motion.div 
-            className="absolute top-8 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4 z-20"
+            className="absolute top-8 left-0 right-0 w-full px-4 z-20"
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl p-4 shadow-xl">
+            <div className="w-full max-w-none backdrop-blur-md bg-black/20 border border-white/30 rounded-2xl p-6 shadow-2xl">
               {searchComponent}
             </div>
           </motion.div>
