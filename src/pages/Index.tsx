@@ -1,7 +1,7 @@
-import TrionApp from '@/components/TrionApp';
+import EnhancedTrionApp from '@/components/EnhancedTrionApp';
 
 const Index = () => {
-  return <TrionApp />;
+  return <EnhancedTrionApp />;
 };
 
 export default Index;
