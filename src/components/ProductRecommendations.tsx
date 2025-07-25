@@ -55,26 +55,46 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
   });
   const [likedItems, setLikedItems] = useState<Set<number>>(new Set());
   useEffect(() => {
-    generateRecommendations();
-  }, [products, userPreferences]);
+    if (products.length > 0) {
+      generateRecommendations();
+    }
+  }, [products]);
   const generateRecommendations = () => {
+    if (products.length === 0) return;
+
+    // Create copies to avoid mutating original array
+    const productsCopy = [...products];
+    
     // Simulate trending products (highest rated or most popular)
-    const trending = products.sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 8);
+    const trending = productsCopy
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 12);
 
     // Generate personalized recommendations based on user preferences
-    const forYou = products.filter(product => {
-      const categoryMatch = userPreferences.preferredCategories.some(cat => product.category.toLowerCase().includes(cat) || product.name.toLowerCase().includes(cat));
-      const colorMatch = userPreferences.preferredColors.some(color => product.name.toLowerCase().includes(color) || product.color && product.color.some(c => c.toLowerCase().includes(color)));
+    const forYou = productsCopy.filter(product => {
+      const categoryMatch = userPreferences.preferredCategories.some(cat => 
+        product.category.toLowerCase().includes(cat) || 
+        product.name.toLowerCase().includes(cat)
+      );
+      const colorMatch = userPreferences.preferredColors.some(color => 
+        product.name.toLowerCase().includes(color) || 
+        (product.color && product.color.some(c => c.toLowerCase().includes(color)))
+      );
       return categoryMatch || colorMatch;
-    }).slice(0, 8);
+    }).slice(0, 12);
 
     // Similar to browsing history
-    const similarToViewed = products.filter(product => {
-      return userPreferences.browsingHistory.some(item => product.category.toLowerCase().includes(item) || product.name.toLowerCase().includes(item));
-    }).slice(0, 8);
+    const similarToViewed = productsCopy.filter(product => {
+      return userPreferences.browsingHistory.some(item => 
+        product.category.toLowerCase().includes(item) || 
+        product.name.toLowerCase().includes(item)
+      );
+    }).slice(0, 12);
 
-    // New arrivals (simulate with random selection)
-    const newArrivals = products.sort(() => Math.random() - 0.5).slice(0, 8);
+    // New arrivals (simulate with random selection but deterministic)
+    const shuffled = productsCopy.sort((a, b) => a.id - b.id);
+    const newArrivals = shuffled.slice(0, 12);
+    
     setRecommendations({
       trending,
       forYou,
@@ -194,11 +214,26 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
         {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         {products.map((product, index) => <ProductCard key={product.id} product={product} index={index} />)}
       </div>
     </motion.section>;
-  return <div className="max-w-7xl mx-auto px-4 py-8">
+    // Show loading skeleton if products are not loaded yet
+    if (products.length === 0) {
+      return <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="bg-muted h-48 rounded-md mb-3"></div>
+              <div className="bg-muted h-4 rounded mb-2"></div>
+              <div className="bg-muted h-4 rounded w-2/3"></div>
+            </div>
+          ))}
+        </div>
+      </div>;
+    }
+
+    return <div className="max-w-7xl mx-auto px-4 py-8">
       <motion.div initial={{
       opacity: 0,
       y: -20
@@ -215,16 +250,16 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
       </motion.div>
 
       {/* Personalized Recommendations */}
-      <RecommendationSection title="Recommended For You" subtitle="Curated based on your preferences and browsing history" products={recommendations.forYou} gradient="from-primary/15 to-accent/10" />
+      <RecommendationSection title="Recommended For You" subtitle="Curated based on your preferences and browsing history" products={recommendations.forYou} gradient="from-primary/15 to-primary/5" />
 
       {/* Trending Products */}
-      <RecommendationSection title="Trending Now" subtitle="What everyone's talking about" products={recommendations.trending} gradient="from-orange-100 to-red-50" />
+      <RecommendationSection title="Trending Now" subtitle="What everyone's talking about" products={recommendations.trending} gradient="from-primary/10 to-accent/5" />
 
       {/* Similar to Viewed */}
-      <RecommendationSection title="Similar to What You've Viewed" subtitle="More items like your recent interests" products={recommendations.similarToViewed} gradient="from-blue-50 to-indigo-50" />
+      <RecommendationSection title="Similar to What You've Viewed" subtitle="More items like your recent interests" products={recommendations.similarToViewed} gradient="from-accent/10 to-primary/5" />
 
       {/* New Arrivals */}
-      <RecommendationSection title="New Arrivals" subtitle="Fresh styles just in" products={recommendations.newArrivals} gradient="from-green-50 to-emerald-50" />
+      <RecommendationSection title="New Arrivals" subtitle="Fresh styles just in" products={recommendations.newArrivals} gradient="from-primary/5 to-accent/10" />
     </div>;
 };
 export default ProductRecommendations;
