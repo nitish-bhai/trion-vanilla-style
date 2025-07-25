@@ -202,7 +202,9 @@ const ProductDetail = () => {
       }
 
       if (data?.success && data?.image) {
-        setTryOnResult(data.image);
+        // Format the base64 image for display
+        const imageData = data.image.startsWith('data:') ? data.image : `data:image/jpeg;base64,${data.image}`;
+        setTryOnResult(imageData);
         toast({
           title: "Try-On Complete!",
           description: "Your virtual try-on is ready",
