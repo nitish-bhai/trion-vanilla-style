@@ -51,11 +51,13 @@ serve(async (req) => {
     console.log('Garment image converted successfully')
 
     const requestBody = {
-      person_image: personImageBase64,
-      garment_image: garmentImageBase64,
-      num_inference_steps: 20,
-      guidance_scale: 7.5,
-      seed: Math.floor(Math.random() * 1000000),
+      model_image: personImageBase64,
+      cloth_image: garmentImageBase64,
+      category: "Upper body",
+      num_inference_steps: 25,
+      guidance_scale: 2,
+      seed: Math.floor(Math.random() * 999999999),
+      base64: true
     }
 
     console.log('Making request to Segmind API...')
