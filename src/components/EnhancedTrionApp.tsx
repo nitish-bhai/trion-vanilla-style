@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Menu, X } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 // Components
 import HeroSection from './HeroSection';
@@ -48,6 +50,82 @@ const EnhancedTrionApp: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  
+  // Authentication state
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<{ full_name?: string; avatar_url?: string } | null>(null);
+
+  // Authentication setup
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Fetch user profile if logged in
+        if (session?.user) {
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setUserProfile(null);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch user profile
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+      
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  // Sign out function
+  const handleSignOut = async () => {
+    try {
+      // Clean up auth state
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Sign out
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Force page reload for clean state
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   // Generate enhanced product data
   useEffect(() => {
@@ -228,6 +306,17 @@ const EnhancedTrionApp: React.FC = () => {
   }, 0);
 
   const checkout = () => {
+    // Check if user is logged in
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login or sign up to complete your order",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
     toast({
       title: "Order Placed Successfully!",
       description: `Thank you for your order of ₹${cartTotal.toLocaleString()}`,
@@ -305,14 +394,61 @@ const EnhancedTrionApp: React.FC = () => {
                 ))}
               </nav>
 
-              {/* Auth Button */}
-              <motion.button
-                onClick={() => navigate('/auth')}
-                className="px-4 py-2 text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
-                whileHover={{ scale: 1.05 }}
-              >
-                Login
-              </motion.button>
+              {/* Auth/Profile Section */}
+              {user ? (
+                <div className="relative group">
+                  <motion.div
+                    className="flex flex-col items-center cursor-pointer p-2"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    {/* Profile Picture */}
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold mb-1">
+                      {userProfile?.avatar_url ? (
+                        <img 
+                          src={userProfile.avatar_url} 
+                          alt="Profile" 
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <User size={16} />
+                      )}
+                    </div>
+                    {/* Name */}
+                    <span className="text-xs font-medium text-foreground truncate max-w-20">
+                      {userProfile?.full_name?.split(' ')[0] || user.email?.split('@')[0]}
+                    </span>
+                    {/* Profile Label */}
+                    <span className="text-xs text-muted-foreground">Profile</span>
+                  </motion.div>
+                  
+                  {/* Dropdown Menu */}
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="p-2">
+                      <button
+                        onClick={() => navigate('/admin')}
+                        className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition-colors"
+                      >
+                        Admin Panel
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-accent rounded-md transition-colors flex items-center gap-2"
+                      >
+                        <LogOut size={16} />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <motion.button
+                  onClick={() => navigate('/auth')}
+                  className="px-4 py-2 text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  Login
+                </motion.button>
+              )}
               {/* Cart Button */}
               <motion.button
                 onClick={() => setIsCartOpen(true)}
