@@ -305,6 +305,14 @@ const EnhancedTrionApp: React.FC = () => {
                 ))}
               </nav>
 
+              {/* Auth Button */}
+              <motion.button
+                onClick={() => navigate('/auth')}
+                className="px-4 py-2 text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
+                whileHover={{ scale: 1.05 }}
+              >
+                Login
+              </motion.button>
               {/* Cart Button */}
               <motion.button
                 onClick={() => setIsCartOpen(true)}
