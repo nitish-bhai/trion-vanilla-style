@@ -259,43 +259,221 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
         transition={{ duration: 0.6 }}
         className="text-center mb-12"
       >
-        <h1 className="text-3xl font-bold text-foreground mb-4">Discover Your Style</h1>
+        <h1 className="text-4xl font-bold text-foreground mb-4">Discover Your Style</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Personalized recommendations based on your style preferences and shopping behavior
         </p>
       </motion.div>
 
-      {/* Personalized Recommendations */}
-      <RecommendationSection
-        title="Recommended For You"
-        subtitle="Curated based on your preferences and browsing history"
-        products={recommendations.forYou}
-        gradient="from-primary/15 to-accent/10"
-      />
+      {/* Special Offers Banner */}
+      <motion.div
+        className="bg-gradient-to-r from-red-500/10 via-pink-500/10 to-purple-500/10 rounded-2xl p-8 mb-12 border border-red-200/50"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      >
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold mb-4">
+            🔥 Limited Time Offer
+          </div>
+          <h2 className="text-3xl font-bold text-foreground mb-2">Flash Sale - Up to 70% OFF</h2>
+          <p className="text-muted-foreground mb-6">Get the best deals on premium fashion items. Sale ends in 24 hours!</p>
+          <div className="flex justify-center gap-4 text-center">
+            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-3 min-w-16">
+              <div className="text-2xl font-bold text-red-600">23</div>
+              <div className="text-xs text-muted-foreground">HOURS</div>
+            </div>
+            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-3 min-w-16">
+              <div className="text-2xl font-bold text-red-600">45</div>
+              <div className="text-xs text-muted-foreground">MINS</div>
+            </div>
+            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-3 min-w-16">
+              <div className="text-2xl font-bold text-red-600">12</div>
+              <div className="text-xs text-muted-foreground">SECS</div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
-      {/* Trending Products */}
-      <RecommendationSection
-        title="Trending Now"
-        subtitle="What everyone's talking about"
-        products={recommendations.trending}
-        gradient="from-orange-100 to-red-50"
-      />
+      {/* Quick Categories */}
+      <motion.div
+        className="mb-12"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+      >
+        <h2 className="text-2xl font-bold text-foreground mb-6 text-center">Shop by Category</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {[
+            { name: 'T-Shirts', emoji: '👕', discount: '30% OFF' },
+            { name: 'Hoodies', emoji: '🧥', discount: '25% OFF' },
+            { name: 'Jeans', emoji: '👖', discount: '40% OFF' },
+            { name: 'Dresses', emoji: '👗', discount: '35% OFF' },
+            { name: 'Sneakers', emoji: '👟', discount: '20% OFF' },
+            { name: 'Watches', emoji: '⌚', discount: '50% OFF' }
+          ].map((category, index) => (
+            <motion.div
+              key={category.name}
+              className="bg-card border border-border rounded-xl p-4 text-center hover:shadow-lg transition-all cursor-pointer group"
+              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
+            >
+              <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{category.emoji}</div>
+              <h3 className="font-semibold text-sm text-foreground mb-1">{category.name}</h3>
+              <div className="text-xs text-primary font-bold">{category.discount}</div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Hot Deals */}
+      {recommendations.trending.length > 0 && (
+        <RecommendationSection
+          title="🔥 Hot Deals & Trending"
+          subtitle="Most popular items with amazing discounts"
+          products={recommendations.trending}
+          gradient="from-orange-100 to-red-50"
+        />
+      )}
+
+      {/* Personalized Recommendations */}
+      {recommendations.forYou.length > 0 && (
+        <RecommendationSection
+          title="✨ Recommended For You"
+          subtitle="Curated based on your preferences and browsing history"
+          products={recommendations.forYou}
+          gradient="from-primary/15 to-accent/10"
+        />
+      )}
+
+      {/* Today's Special Offers */}
+      <motion.div
+        className="mb-12"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.5 }}
+      >
+        <div className="bg-gradient-to-r from-green-100 to-emerald-50 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-bold text-foreground mb-2">💫 Today's Special Offers</h2>
+          <p className="text-muted-foreground">Limited time deals you don't want to miss</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Buy 2 Get 1 Free */}
+          <motion.div
+            className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 text-center border border-blue-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="text-4xl mb-3">🎁</div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Buy 2 Get 1 FREE</h3>
+            <p className="text-muted-foreground text-sm mb-4">On all casual wear items</p>
+            <button className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors">
+              Shop Now
+            </button>
+          </motion.div>
+
+          {/* Free Shipping */}
+          <motion.div
+            className="bg-gradient-to-br from-purple-50 to-pink-100 rounded-xl p-6 text-center border border-purple-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="text-4xl mb-3">🚚</div>
+            <h3 className="text-xl font-bold text-foreground mb-2">FREE Shipping</h3>
+            <p className="text-muted-foreground text-sm mb-4">On orders above ₹999</p>
+            <button className="bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-purple-700 transition-colors">
+              Explore
+            </button>
+          </motion.div>
+
+          {/* Extra Discount */}
+          <motion.div
+            className="bg-gradient-to-br from-yellow-50 to-orange-100 rounded-xl p-6 text-center border border-yellow-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="text-4xl mb-3">💸</div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Extra 15% OFF</h3>
+            <p className="text-muted-foreground text-sm mb-4">Use code: TRION15</p>
+            <button className="bg-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-700 transition-colors">
+              Copy Code
+            </button>
+          </motion.div>
+        </div>
+      </motion.div>
 
       {/* Similar to Viewed */}
-      <RecommendationSection
-        title="Similar to What You've Viewed"
-        subtitle="More items like your recent interests"
-        products={recommendations.similarToViewed}
-        gradient="from-blue-50 to-indigo-50"
-      />
+      {recommendations.similarToViewed.length > 0 && (
+        <RecommendationSection
+          title="👀 Similar to What You've Viewed"
+          subtitle="More items like your recent interests"
+          products={recommendations.similarToViewed}
+          gradient="from-blue-50 to-indigo-50"
+        />
+      )}
 
       {/* New Arrivals */}
-      <RecommendationSection
-        title="New Arrivals"
-        subtitle="Fresh styles just in"
-        products={recommendations.newArrivals}
-        gradient="from-green-50 to-emerald-50"
-      />
+      {recommendations.newArrivals.length > 0 && (
+        <RecommendationSection
+          title="🆕 New Arrivals"
+          subtitle="Fresh styles just in - be the first to own them"
+          products={recommendations.newArrivals}
+          gradient="from-green-50 to-emerald-50"
+        />
+      )}
+
+      {/* Featured Brands */}
+      <motion.div
+        className="mb-12"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.7 }}
+      >
+        <div className="bg-gradient-to-r from-gray-50 to-slate-100 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-bold text-foreground mb-2">🏆 Featured Brands</h2>
+          <p className="text-muted-foreground">Shop from our premium brand partners</p>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {['TRION', 'StyleCraft', 'UrbanWear', 'ClassicFit', 'ModernEdge'].map((brand, index) => (
+            <motion.div
+              key={brand}
+              className="bg-card border border-border rounded-lg p-4 text-center hover:shadow-md transition-all cursor-pointer"
+              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.8 + index * 0.1 }}
+            >
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span className="text-primary font-bold text-lg">{brand[0]}</span>
+              </div>
+              <h3 className="font-semibold text-sm text-foreground">{brand}</h3>
+              <p className="text-xs text-muted-foreground">Up to 60% OFF</p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Bottom Call-to-Action */}
+      <motion.div
+        className="text-center py-12 bg-gradient-to-r from-primary/5 to-primary/10 rounded-2xl"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.9 }}
+      >
+        <h2 className="text-3xl font-bold text-foreground mb-4">Can't Find What You're Looking For?</h2>
+        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+          Try our smart search or browse all categories to discover more amazing products
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button className="bg-primary text-primary-foreground px-8 py-3 rounded-full font-medium hover:bg-primary/90 transition-colors">
+            Browse All Products
+          </button>
+          <button className="border border-primary text-primary px-8 py-3 rounded-full font-medium hover:bg-primary/10 transition-colors">
+            Contact Support
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 };
