@@ -34,6 +34,34 @@ const productShowcase = [
     feature: 'Blue Light Blocking',
     promotion: 'Free Shipping',
     description: '100% UV protection & anti-glare coating'
+  },
+  {
+    image: heroHoodie,
+    title: 'Premium Joggers',
+    feature: 'Moisture-Wicking Technology',
+    promotion: '30% OFF',
+    description: 'Lightweight fabric with advanced comfort fit'
+  },
+  {
+    image: heroSneaker,
+    title: 'Athletic Wear',
+    feature: 'Performance Enhanced',
+    promotion: 'Limited Edition',
+    description: 'Professional grade materials for active lifestyle'
+  },
+  {
+    image: heroWatch,
+    title: 'Luxury Accessories',
+    feature: 'Premium Materials',
+    promotion: '50% OFF',
+    description: 'Handcrafted with attention to detail'
+  },
+  {
+    image: heroGlasses,
+    title: 'Fashion Eyewear',
+    feature: 'Trending Styles',
+    promotion: 'New Arrival',
+    description: 'Latest fashion trends with premium quality'
   }
 ];
 
@@ -118,55 +146,20 @@ function ProductCarousel() {
 const HeroSection: React.FC = () => {
   return (
     <motion.section 
-      className="relative bg-gradient-to-br from-primary/5 to-primary/10 py-16 overflow-hidden"
+      className="relative bg-gradient-to-br from-primary/5 to-primary/10 py-8 overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
     >
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <motion.div 
-            className="text-center lg:text-left"
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            <h1 className="text-5xl lg:text-7xl font-bold text-foreground mb-6">
-              TRION
-              <span className="block text-primary text-3xl lg:text-4xl font-normal">
-                Fashion Forward
-              </span>
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-md">
-              Discover the future of fashion with our intelligent shopping experience. 
-              Try on clothes virtually before you buy.
-            </p>
-            <motion.div 
-              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-            >
-              <button className="trion-btn text-lg px-8 py-3">
-                Start Shopping
-              </button>
-              <button className="trion-btn-secondary trion-btn text-lg px-8 py-3">
-                Virtual Try-On
-              </button>
-            </motion.div>
-          </motion.div>
-
-          {/* Right Product Carousel */}
-          <motion.div 
-            className="h-96 lg:h-[500px]"
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            <ProductCarousel />
-          </motion.div>
-        </div>
+      <div className="w-full">
+        <motion.div 
+          className="h-[500px] lg:h-[600px]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          <ProductCarousel />
+        </motion.div>
       </div>
 
       {/* Animated Background Elements */}
