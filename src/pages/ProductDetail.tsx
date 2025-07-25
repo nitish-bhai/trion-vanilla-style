@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -154,6 +155,20 @@ const ProductDetail = () => {
     }
   };
 
+  const imageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data URL prefix to get just base64
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleTryOn = async () => {
     if (!userImage || !product) {
       toast({
@@ -167,31 +182,28 @@ const ProductDetail = () => {
     setIsTryOnLoading(true);
     
     try {
-      const formData = new FormData();
-      formData.append('userImage', userImage);
-      formData.append('clothImage', product.image);
-      formData.append('category', 'upper_body');
-
-      const response = await fetch('https://api.segmind.com/v1/try-on-diffusion', {
-        method: 'POST',
-        headers: {
-          'x-api-key': 'SG_50fc9ec15c93bef3',
+      const personImageBase64 = await imageToBase64(userImage);
+      
+      const { data, error } = await supabase.functions.invoke('virtual-tryon', {
+        body: {
+          personImageBase64,
+          garmentImageUrl: product.image,
         },
-        body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+      if (error) {
+        throw new Error(error.message || 'Virtual try-on failed');
       }
 
-      const blob = await response.blob();
-      const imageUrl = URL.createObjectURL(blob);
-      setTryOnResult(imageUrl);
-      
-      toast({
-        title: "Try-On Complete!",
-        description: "Your virtual try-on is ready",
-      });
+      if (data?.success && data?.image) {
+        setTryOnResult(data.image);
+        toast({
+          title: "Try-On Complete!",
+          description: "Your virtual try-on is ready",
+        });
+      } else {
+        throw new Error('Invalid response from virtual try-on service');
+      }
     } catch (error) {
       console.error('Try-on failed:', error);
       toast({
@@ -392,7 +404,7 @@ const ProductDetail = () => {
                         )}
                       </Button>
                       <p className="text-xs text-muted-foreground">
-                        Note: You need a valid Segmind API key. The current key appears to be invalid.
+                        Upload a clear, full-body photo for best results
                       </p>
                     </div>
 
