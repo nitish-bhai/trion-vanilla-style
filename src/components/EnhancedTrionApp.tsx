@@ -47,6 +47,7 @@ const EnhancedTrionApp: React.FC = () => {
   const [currentSearchPrompt, setCurrentSearchPrompt] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   // Generate enhanced product data
   useEffect(() => {
@@ -176,6 +177,47 @@ const EnhancedTrionApp: React.FC = () => {
     setShowRecommendations(false);
   };
 
+  // Category filtering logic
+  const filterProductsByCategory = useMemo(() => {
+    if (selectedCategory === 'ALL') return products;
+    
+    return products.filter(product => {
+      switch (selectedCategory) {
+        case 'MEN':
+          return product.gender === 'men' || 
+                 ['T-Shirts', 'Shirts', 'Hoodies', 'Pants', 'Jeans', 'Shorts', 'Shoes', 'Sneakers', 'Watches'].includes(product.category);
+        case 'WOMEN':
+          return product.gender === 'women' || 
+                 ['Dresses', 'T-Shirts', 'Jeans', 'Pants', 'Watches', 'Glasses', 'Shorts', 'Bags'].includes(product.category);
+        case 'GEN Z':
+          return product.name.toLowerCase().includes('graphic') || 
+                 product.name.toLowerCase().includes('oversized') ||
+                 product.name.toLowerCase().includes('lifestyle') ||
+                 product.category === 'T-Shirts' ||
+                 product.category === 'Hoodies' ||
+                 product.category === 'Sneakers';
+        case 'BRANDS':
+          return ['TRION', 'StyleCraft', 'UrbanWear', 'ClassicFit', 'ModernEdge'].includes(product.brand || '');
+        default:
+          return true;
+      }
+    });
+  }, [products, selectedCategory]);
+
+  // Update filtered products when category changes
+  useEffect(() => {
+    if (showRecommendations) {
+      setFilteredProducts(filterProductsByCategory);
+    }
+  }, [filterProductsByCategory, showRecommendations]);
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setShowRecommendations(true);
+    setCurrentSearchPrompt('');
+    setIsMobileMenuOpen(false);
+  };
+
   // Cart calculations
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cart.reduce((sum, item) => {
@@ -226,7 +268,7 @@ const EnhancedTrionApp: React.FC = () => {
               className="text-3xl font-bold text-primary cursor-pointer"
               whileHover={{ scale: 1.05 }}
               onClick={() => {
-                setFilteredProducts(products);
+                setSelectedCategory('ALL');
                 setShowRecommendations(true);
                 setCurrentSearchPrompt('');
               }}
@@ -244,6 +286,24 @@ const EnhancedTrionApp: React.FC = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-6">
+              {/* Navigation Menu */}
+              <nav className="flex items-center gap-1">
+                {['ALL', 'MEN', 'WOMEN', 'GEN Z', 'BRANDS'].map((category) => (
+                  <motion.button
+                    key={category}
+                    onClick={() => handleCategoryChange(category)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      selectedCategory === category
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                    }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {category}
+                  </motion.button>
+                ))}
+              </nav>
 
               {/* Cart Button */}
               <motion.button
@@ -278,13 +338,30 @@ const EnhancedTrionApp: React.FC = () => {
                 transition={{ duration: 0.3 }}
               >
                 <nav className="flex flex-col gap-4 pt-4">
-                  <button
-                    onClick={() => setIsCartOpen(true)}
-                    className="flex items-center gap-2 text-left text-foreground hover:text-primary transition-colors"
-                  >
-                    <ShoppingCart size={20} />
-                    Cart ({cartItemCount})
-                  </button>
+                  {/* Category Navigation */}
+                  {['ALL', 'MEN', 'WOMEN', 'GEN Z', 'BRANDS'].map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => handleCategoryChange(category)}
+                      className={`text-left px-4 py-2 rounded-lg font-medium transition-all ${
+                        selectedCategory === category
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                  
+                  <div className="border-t border-border pt-4">
+                    <button
+                      onClick={() => setIsCartOpen(true)}
+                      className="flex items-center gap-2 text-left text-foreground hover:text-primary transition-colors"
+                    >
+                      <ShoppingCart size={20} />
+                      Cart ({cartItemCount})
+                    </button>
+                  </div>
                 </nav>
               </motion.div>
             )}
@@ -322,7 +399,7 @@ const EnhancedTrionApp: React.FC = () => {
         {showRecommendations ? (
           /* Recommendation Engine */
           <ProductRecommendations
-            products={products}
+            products={filteredProducts}
             onAddToCart={addToCart}
             onViewDetails={(id) => navigate(`/product/${id}`)}
           />
@@ -357,7 +434,7 @@ const EnhancedTrionApp: React.FC = () => {
                   <p className="text-muted-foreground mb-6">Try adjusting your search terms or filters</p>
                   <button
                     onClick={() => {
-                      setFilteredProducts(products);
+                      setSelectedCategory('ALL');
                       setShowRecommendations(true);
                       setCurrentSearchPrompt('');
                     }}
