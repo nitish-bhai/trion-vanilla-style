@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import placeholderImage from '@/assets/trion-placeholder.jpg';
 
@@ -16,6 +17,7 @@ interface CartItem extends Product {
 }
 
 const TrionApp = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -469,16 +471,16 @@ const TrionApp = () => {
                       <p className="text-xl font-bold text-teal-600">₹{product.price.toLocaleString()}</p>
                       <div className="flex gap-2">
                         <button 
-                          onClick={() => addToCart(product.id)}
+                          onClick={() => navigate(`/product/${product.id}`)}
                           className="trion-btn flex-1 text-sm"
                         >
-                          Add to Cart
+                          View Details
                         </button>
                         <button 
-                          onClick={() => openTryOn(product.id)}
+                          onClick={() => addToCart(product.id)}
                           className="trion-btn-secondary trion-btn flex-1 text-sm"
                         >
-                          Try On
+                          Add to Cart
                         </button>
                       </div>
                     </div>
