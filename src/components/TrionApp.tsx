@@ -128,7 +128,7 @@ const TrionApp = () => {
           body: JSON.stringify({
             person_image: personImageBase64,
             clothing_image: clothingImageBase64,
-            category: "Full body",
+            category: "upper_body",
             num_inference_steps: 20,
             guidance_scale: 7.5,
             seed: 42,
