@@ -185,18 +185,18 @@ const SmartSearch: React.FC<SmartSearchProps> = ({ products, onSearch, onPromptS
 
   return (
     <motion.div 
-      className="bg-card rounded-lg shadow-lg p-6 mb-8"
+      className="bg-transparent rounded-lg p-4"
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6 }}
     >
       {/* Search Mode Toggle */}
-      <div className="flex justify-center mb-6">
-        <div className="bg-muted rounded-full p-1 flex">
+      <div className="flex justify-center mb-4">
+        <div className="bg-white/20 backdrop-blur-sm rounded-full p-1 flex border border-white/30">
           <button
             onClick={() => setIsPromptMode(true)}
             className={`px-6 py-2 rounded-full transition-all ${
-              isPromptMode ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground'
+              isPromptMode ? 'bg-white/30 text-white shadow-md backdrop-blur-sm' : 'text-white/70 hover:text-white'
             }`}
           >
             Smart Search
@@ -204,7 +204,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({ products, onSearch, onPromptS
           <button
             onClick={() => setIsPromptMode(false)}
             className={`px-6 py-2 rounded-full transition-all ${
-              !isPromptMode ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground'
+              !isPromptMode ? 'bg-white/30 text-white shadow-md backdrop-blur-sm' : 'text-white/70 hover:text-white'
             }`}
           >
             Manual Filter
@@ -224,22 +224,22 @@ const SmartSearch: React.FC<SmartSearchProps> = ({ products, onSearch, onPromptS
             {/* Prompt Search */}
             <div className="relative">
               <div className="relative">
-                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground transition-all ${isAnimating ? 'animate-spin' : ''}`} size={20} />
+                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-white/70 transition-all ${isAnimating ? 'animate-spin' : ''}`} size={20} />
                 <input
                   type="text"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handlePromptSearch(prompt)}
-                  placeholder="PROMPT What You Need - e.g., 'Red cotton t-shirt in medium size'"
-                  className="w-full pl-12 pr-16 py-4 text-lg border-2 border-primary/20 rounded-full bg-background focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+                  placeholder="Search for anything... e.g., 'Red cotton t-shirt'"
+                  className="w-full pl-12 pr-16 py-3 text-lg border border-white/30 rounded-full bg-white/10 backdrop-blur-sm text-white placeholder-white/60 focus:border-white/50 focus:ring-2 focus:ring-white/20 transition-all"
                 />
                 <button
                   onClick={() => handlePromptSearch(prompt)}
                   disabled={!prompt.trim() || isAnimating}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 trion-btn px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white px-4 py-1.5 rounded-full text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm border border-white/30 transition-all"
                 >
                   {isAnimating ? (
-                    <div className="trion-spinner w-4 h-4"></div>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   ) : (
                     'Search'
                   )}
@@ -247,15 +247,15 @@ const SmartSearch: React.FC<SmartSearchProps> = ({ products, onSearch, onPromptS
               </div>
               
               {/* Smart suggestions */}
-              <div className="mt-4 flex flex-wrap gap-2">
-                {['Black formal shirt', 'Red cotton t-shirt medium', 'Blue jeans under ₹2000', 'Summer dresses', 'Gym shorts'].map((suggestion) => (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {['Black formal shirt', 'Red cotton t-shirt', 'Blue jeans', 'Summer dresses'].map((suggestion) => (
                   <button
                     key={suggestion}
                     onClick={() => {
                       setPrompt(suggestion);
                       handlePromptSearch(suggestion);
                     }}
-                    className="px-3 py-1 text-sm bg-muted hover:bg-primary hover:text-primary-foreground rounded-full transition-all"
+                    className="px-3 py-1 text-xs bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/20 rounded-full transition-all"
                   >
                     {suggestion}
                   </button>

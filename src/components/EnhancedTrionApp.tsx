@@ -8,6 +8,7 @@ import { ShoppingCart, Menu, X } from 'lucide-react';
 import HeroSection from './HeroSection';
 import SmartSearch from './SmartSearch';
 import ProductRecommendations from './ProductRecommendations';
+import BrandFeatures from './BrandFeatures';
 
 // Import multiple product images for better showcase
 import placeholderImage from '@/assets/trion-placeholder.jpg';
@@ -243,11 +244,6 @@ const EnhancedTrionApp: React.FC = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-6">
-              <nav className="flex items-center gap-6">
-                <button className="text-foreground hover:text-primary transition-colors">Categories</button>
-                <button className="text-foreground hover:text-primary transition-colors">New</button>
-                <button className="text-foreground hover:text-primary transition-colors">Sale</button>
-              </nav>
 
               {/* Cart Button */}
               <motion.button
@@ -282,9 +278,6 @@ const EnhancedTrionApp: React.FC = () => {
                 transition={{ duration: 0.3 }}
               >
                 <nav className="flex flex-col gap-4 pt-4">
-                  <button className="text-left text-foreground hover:text-primary transition-colors">Categories</button>
-                  <button className="text-left text-foreground hover:text-primary transition-colors">New</button>
-                  <button className="text-left text-foreground hover:text-primary transition-colors">Sale</button>
                   <button
                     onClick={() => setIsCartOpen(true)}
                     className="flex items-center gap-2 text-left text-foreground hover:text-primary transition-colors"
@@ -301,17 +294,29 @@ const EnhancedTrionApp: React.FC = () => {
 
       {/* Main Content */}
       <main>
-        {/* Hero Section - Only show when not searching */}
-        {showRecommendations && <HeroSection />}
-
-        {/* Smart Search */}
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <SmartSearch
-            products={products}
-            onSearch={handleSearch}
-            onPromptSearch={handlePromptSearch}
+        {/* Hero Section with Overlay Search */}
+        {showRecommendations && (
+          <HeroSection 
+            searchComponent={
+              <SmartSearch
+                products={products}
+                onSearch={handleSearch}
+                onPromptSearch={handlePromptSearch}
+              />
+            }
           />
-        </div>
+        )}
+
+        {/* Search Bar for non-hero view */}
+        {!showRecommendations && (
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <SmartSearch
+              products={products}
+              onSearch={handleSearch}
+              onPromptSearch={handlePromptSearch}
+            />
+          </div>
+        )}
 
         {/* Content based on search state */}
         {showRecommendations ? (
@@ -432,6 +437,9 @@ const EnhancedTrionApp: React.FC = () => {
             </motion.div>
           </div>
         )}
+
+        {/* Brand Features Section */}
+        <BrandFeatures />
       </main>
 
       {/* Cart Slide-out */}

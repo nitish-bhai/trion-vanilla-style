@@ -143,7 +143,11 @@ function ProductCarousel() {
   );
 }
 
-const HeroSection: React.FC = () => {
+interface HeroSectionProps {
+  searchComponent?: React.ReactNode;
+}
+
+const HeroSection: React.FC<HeroSectionProps> = ({ searchComponent }) => {
   return (
     <motion.section 
       className="relative bg-gradient-to-br from-primary/5 to-primary/10 py-8 overflow-hidden"
@@ -151,7 +155,7 @@ const HeroSection: React.FC = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
     >
-      <div className="w-full">
+      <div className="w-full relative">
         <motion.div 
           className="h-[500px] lg:h-[600px]"
           initial={{ opacity: 0 }}
@@ -160,6 +164,20 @@ const HeroSection: React.FC = () => {
         >
           <ProductCarousel />
         </motion.div>
+        
+        {/* Overlay Search Bar */}
+        {searchComponent && (
+          <motion.div 
+            className="absolute top-8 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4 z-20"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl p-4 shadow-xl">
+              {searchComponent}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Animated Background Elements */}
