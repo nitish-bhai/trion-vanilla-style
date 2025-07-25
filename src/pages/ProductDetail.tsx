@@ -4,7 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Star, ArrowLeft, ShoppingCart, Heart, Share2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Star, ArrowLeft, ShoppingCart, Heart, Share2, Shirt } from 'lucide-react';
 import placeholderImage from '@/assets/trion-placeholder.jpg';
 
 interface Product {
@@ -50,6 +51,9 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [userImage, setUserImage] = useState<File | null>(null);
+  const [tryOnResult, setTryOnResult] = useState<string | null>(null);
+  const [isTryOnLoading, setIsTryOnLoading] = useState(false);
 
   useEffect(() => {
     // Simulate API call
@@ -140,6 +144,64 @@ const ProductDetail = () => {
       title: "Added to Cart",
       description: `${product?.name} added to your cart`,
     });
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUserImage(file);
+      setTryOnResult(null);
+    }
+  };
+
+  const handleTryOn = async () => {
+    if (!userImage || !product) {
+      toast({
+        title: "Error",
+        description: "Please upload an image first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTryOnLoading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('userImage', userImage);
+      formData.append('clothImage', product.image);
+      formData.append('category', 'upper_body');
+
+      const response = await fetch('https://api.segmind.com/v1/try-on-diffusion', {
+        method: 'POST',
+        headers: {
+          'x-api-key': 'SG_50fc9ec15c93bef3',
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      setTryOnResult(imageUrl);
+      
+      toast({
+        title: "Try-On Complete!",
+        description: "Your virtual try-on is ready",
+      });
+    } catch (error) {
+      console.error('Try-on failed:', error);
+      toast({
+        title: "Try-On Failed",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTryOnLoading(false);
+    }
   };
 
   const getRatingDistribution = () => {
@@ -266,6 +328,69 @@ const ProductDetail = () => {
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Add to Cart
               </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex-1">
+                    <Shirt className="w-4 h-4 mr-2" />
+                    Virtual Try-On
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Virtual Try-On - {product.name}</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="font-semibold mb-2">Upload Your Photo</h3>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
+                        />
+                        {userImage && (
+                          <div className="mt-4">
+                            <img
+                              src={URL.createObjectURL(userImage)}
+                              alt="User upload"
+                              className="w-full max-w-xs rounded-lg object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <Button 
+                        onClick={handleTryOn} 
+                        disabled={!userImage || isTryOnLoading}
+                        className="w-full"
+                      >
+                        {isTryOnLoading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                            Processing...
+                          </>
+                        ) : (
+                          'Try On This Item'
+                        )}
+                      </Button>
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="font-semibold">Result</h3>
+                      {tryOnResult ? (
+                        <img
+                          src={tryOnResult}
+                          alt="Try-on result"
+                          className="w-full rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-96 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+                          Your try-on result will appear here
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Button variant="outline" size="icon">
                 <Heart className="w-4 h-4" />
               </Button>
