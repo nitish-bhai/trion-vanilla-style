@@ -105,15 +105,19 @@ const TrionApp = () => {
   };
 
   // Call Segmind Try-On Diffusion API
-  const callTryOnAPI = async (personImage: File, clothingImage: File, category: string) => {
+  const callTryOnAPI = async (personImage: File, product: Product) => {
     setIsProcessingTryOn(true);
     
     try {
-      // Convert images to base64
+      // Convert person image to base64
       const personImageBase64 = await imageToBase64(personImage);
-      const clothingImageBase64 = await imageToBase64(clothingImage);
       
-      const response = await fetch(
+      // Convert product image URL to base64
+      const response = await fetch(product.image);
+      const blob = await response.blob();
+      const clothingImageBase64 = await imageToBase64(blob as File);
+      
+      const apiResponse = await fetch(
         'https://api.segmind.com/v1/try-on-diffusion',
         {
           method: 'POST',
@@ -124,7 +128,7 @@ const TrionApp = () => {
           body: JSON.stringify({
             person_image: personImageBase64,
             clothing_image: clothingImageBase64,
-            category: category,
+            category: "Full body",
             num_inference_steps: 20,
             guidance_scale: 7.5,
             seed: 42,
@@ -133,12 +137,12 @@ const TrionApp = () => {
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      if (!apiResponse.ok) {
+        throw new Error(`API Error: ${apiResponse.status} ${apiResponse.statusText}`);
       }
 
-      const blob = await response.blob();
-      const tryOnImageUrl = URL.createObjectURL(blob);
+      const resultBlob = await apiResponse.blob();
+      const tryOnImageUrl = URL.createObjectURL(resultBlob);
 
       // Show result in modal
       setModalContent(
@@ -146,7 +150,7 @@ const TrionApp = () => {
           <h3 className="text-2xl font-semibold mb-4 text-slate-800">Virtual Try-On Result</h3>
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div>
-              <p className="text-sm text-gray-600 mb-2">Person</p>
+              <p className="text-sm text-gray-600 mb-2">Your Photo</p>
               <img 
                 src={URL.createObjectURL(personImage)} 
                 alt="Person"
@@ -154,10 +158,10 @@ const TrionApp = () => {
               />
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-2">Clothing</p>
+              <p className="text-sm text-gray-600 mb-2">Selected Product</p>
               <img 
-                src={URL.createObjectURL(clothingImage)} 
-                alt="Clothing"
+                src={product.image} 
+                alt={product.name}
                 className="w-full rounded-lg shadow-lg"
               />
             </div>
@@ -170,7 +174,8 @@ const TrionApp = () => {
               />
             </div>
           </div>
-          <p className="text-sm text-gray-600 mb-6">Category: {category}</p>
+          <h4 className="text-xl font-medium mb-2">{product.name}</h4>
+          <p className="text-gray-600 mb-6">₹{product.price.toLocaleString()}</p>
           <div className="flex gap-3 justify-center">
             <button 
               className="trion-btn-secondary trion-btn"
@@ -204,31 +209,22 @@ const TrionApp = () => {
     if (!product) return;
 
     let personImage: File | null = null;
-    let clothingImage: File | null = null;
-    let selectedCategory = "Upper body";
 
     const updateModal = () => {
       setModalContent(
         <div className="text-center max-w-lg">
           <h3 className="text-2xl font-semibold mb-4 text-slate-800">Virtual Try-On</h3>
           
-          {/* Category Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Category
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => {
-                selectedCategory = e.target.value;
-                updateModal();
-              }}
-              className="w-full p-2 border border-gray-300 rounded-lg"
-            >
-              <option value="Upper body">Upper body</option>
-              <option value="Lower body">Lower body</option>
-              <option value="Full body">Full body</option>
-            </select>
+          {/* Selected Product Display */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600 mb-3">Selected Product:</p>
+            <img 
+              src={product.image} 
+              alt={product.name}
+              className="w-24 h-24 object-cover rounded-lg mx-auto mb-2"
+            />
+            <h4 className="font-medium">{product.name}</h4>
+            <p className="text-teal-600 font-semibold">₹{product.price.toLocaleString()}</p>
           </div>
 
           {/* Person Image Upload */}
@@ -246,63 +242,32 @@ const TrionApp = () => {
               }}
               className="hidden"
             />
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
               {personImage ? (
                 <div>
                   <img 
                     src={URL.createObjectURL(personImage)} 
                     alt="Person"
-                    className="w-24 h-24 object-cover rounded-lg mx-auto mb-2"
+                    className="w-32 h-32 object-cover rounded-lg mx-auto mb-3"
                   />
-                  <p className="text-sm text-green-600">Person image uploaded</p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-gray-600 mb-2">Upload Person Image</p>
+                  <p className="text-sm text-green-600 font-medium">Full body image uploaded ✓</p>
                   <button 
-                    className="trion-btn-secondary trion-btn text-sm"
+                    className="trion-btn-secondary trion-btn text-sm mt-2"
                     onClick={() => personImageRef.current?.click()}
                   >
-                    Choose Image
+                    Change Photo
                   </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Clothing Image Upload */}
-          <div className="mb-6">
-            <input
-              ref={clothingImageRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  clothingImage = file;
-                  updateModal();
-                }
-              }}
-              className="hidden"
-            />
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              {clothingImage ? (
-                <div>
-                  <img 
-                    src={URL.createObjectURL(clothingImage)} 
-                    alt="Clothing"
-                    className="w-24 h-24 object-cover rounded-lg mx-auto mb-2"
-                  />
-                  <p className="text-sm text-green-600">Clothing image uploaded</p>
                 </div>
               ) : (
                 <div>
-                  <p className="text-gray-600 mb-2">Upload Clothing Image</p>
+                  <div className="text-4xl mb-3">📸</div>
+                  <p className="text-gray-700 font-medium mb-2">Upload Your Full Body Photo</p>
+                  <p className="text-sm text-gray-500 mb-4">Make sure your full body is visible in the photo for best results</p>
                   <button 
-                    className="trion-btn-secondary trion-btn text-sm"
-                    onClick={() => clothingImageRef.current?.click()}
+                    className="trion-btn text-sm"
+                    onClick={() => personImageRef.current?.click()}
                   >
-                    Choose Image
+                    Choose Photo
                   </button>
                 </div>
               )}
@@ -314,24 +279,36 @@ const TrionApp = () => {
             <button 
               className="trion-btn w-full"
               onClick={() => {
-                if (personImage && clothingImage) {
-                  callTryOnAPI(personImage, clothingImage, selectedCategory);
+                if (personImage) {
+                  callTryOnAPI(personImage, product);
                 }
               }}
-              disabled={!personImage || !clothingImage || isProcessingTryOn}
+              disabled={!personImage || isProcessingTryOn}
             >
               {isProcessingTryOn ? (
                 <>
                   <div className="trion-spinner inline-block mr-2"></div>
-                  Processing...
+                  Processing Virtual Try-On...
                 </>
               ) : (
-                'Generate Try-On'
+                'Generate Virtual Try-On'
               )}
             </button>
+            {!personImage && (
+              <p className="text-xs text-gray-500 mt-2">Please upload your photo first</p>
+            )}
           </div>
 
           <div className="flex gap-3 justify-center">
+            <button 
+              className="trion-btn"
+              onClick={() => {
+                addToCart(productId);
+                setIsModalOpen(false);
+              }}
+            >
+              Add to Cart - ₹{product.price.toLocaleString()}
+            </button>
             <button 
               className="trion-btn-secondary trion-btn"
               onClick={() => setIsModalOpen(false)}
