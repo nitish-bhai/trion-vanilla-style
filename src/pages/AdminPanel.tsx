@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart3, 
   Users, 
@@ -8,7 +8,10 @@ import {
   Settings as SettingsIcon, 
   LogOut,
   Home,
-  ShoppingBag
+  ShoppingBag,
+  Tags,
+  Image,
+  Bell
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +23,8 @@ import UserManagement from '@/components/admin/UserManagement';
 import OrderManagement from '@/components/admin/OrderManagement';
 import Analytics from '@/components/admin/Analytics';
 import Settings from '@/components/admin/Settings';
+import CategoryManagement from '@/components/admin/CategoryManagement';
+import BannerManagement from '@/components/admin/BannerManagement';
 
 type User = {
   id: string;
@@ -39,6 +44,8 @@ const AdminPanel: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -75,6 +82,40 @@ const AdminPanel: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Real-time order notifications
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const channel = supabase
+      .channel('order-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          const newOrder = payload.new;
+          toast({
+            title: "New Order Received! 🎉",
+            description: `Order #${newOrder.id.slice(0, 8)} - ₹${newOrder.total_amount}`,
+          });
+          
+          setNotifications(prev => [{
+            id: newOrder.id,
+            message: `New order for ₹${newOrder.total_amount}`,
+            timestamp: new Date().toISOString()
+          }, ...prev.slice(0, 9)]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin, toast]);
 
   const checkAdminRole = async (userId: string) => {
     try {
@@ -142,6 +183,8 @@ const AdminPanel: React.FC = () => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'products', label: 'Products', icon: Package },
+    { id: 'categories', label: 'Categories', icon: Tags },
+    { id: 'banners', label: 'Hero Banners', icon: Image },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -188,6 +231,53 @@ const AdminPanel: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-4">
+              <div className="relative">
+                <motion.button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors relative"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <Bell size={20} />
+                  {notifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                      {notifications.length}
+                    </span>
+                  )}
+                </motion.button>
+
+                <AnimatePresence>
+                  {showNotifications && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
+                    >
+                      <div className="p-4 border-b border-border">
+                        <h3 className="font-semibold">Notifications</h3>
+                      </div>
+                      {notifications.length > 0 ? (
+                        <div className="divide-y divide-border">
+                          {notifications.map((notif) => (
+                            <div key={notif.id} className="p-4 hover:bg-muted/50">
+                              <p className="text-sm">{notif.message}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(notif.timestamp).toLocaleString()}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center text-muted-foreground">
+                          <Bell size={32} className="mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No new notifications</p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               <motion.button
                 onClick={() => navigate('/')}
                 className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -316,6 +406,10 @@ const AdminPanel: React.FC = () => {
             )}
             
             {activeTab === 'products' && <ProductManagement />}
+            
+            {activeTab === 'categories' && <CategoryManagement />}
+            
+            {activeTab === 'banners' && <BannerManagement />}
             
             {activeTab === 'users' && <UserManagement />}
             
