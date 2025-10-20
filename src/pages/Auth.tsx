@@ -21,18 +21,12 @@ const Auth: React.FC = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check if user is admin
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .single();
-        
-        if (roleData?.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+        // Check admin role via security definer function
+        const { data: hasAdminRole } = await supabase.rpc('has_role', {
+          _user_id: session.user.id,
+          _role: 'admin',
+        });
+        navigate(hasAdminRole ? '/admin' : '/');
       }
     };
     checkUser();
@@ -75,12 +69,11 @@ const Auth: React.FC = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Check if user is admin
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .single();
+        // Check admin via security definer function
+        const { data: hasAdminRole } = await supabase.rpc('has_role', {
+          _user_id: data.user.id,
+          _role: 'admin',
+        });
         
         toast({
           title: "Welcome back!",
@@ -88,11 +81,7 @@ const Auth: React.FC = () => {
         });
         
         // Redirect based on role
-        if (roleData?.role === 'admin') {
-          window.location.href = '/admin';
-        } else {
-          window.location.href = '/';
-        }
+        window.location.href = hasAdminRole ? '/admin' : '/';
       }
     } catch (error: any) {
       toast({

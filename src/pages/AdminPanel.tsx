@@ -119,17 +119,15 @@ const AdminPanel: React.FC = () => {
 
   const checkAdminRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
+      // Use security definer function to avoid RLS recursion and multi-row issues
+      const { data: hasAdminRole, error } = await supabase.rpc('has_role', {
+        _user_id: userId,
+        _role: 'admin'
+      });
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
+      if (error) throw error;
 
-      const userIsAdmin = data?.role === 'admin';
+      const userIsAdmin = Boolean(hasAdminRole);
       setIsAdmin(userIsAdmin);
       
       if (!userIsAdmin) {
