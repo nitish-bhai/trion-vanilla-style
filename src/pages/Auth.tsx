@@ -21,7 +21,18 @@ const Auth: React.FC = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/');
+        // Check if user is admin
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (roleData?.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
       }
     };
     checkUser();
@@ -64,12 +75,24 @@ const Auth: React.FC = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Check if user is admin
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .single();
+        
         toast({
           title: "Welcome back!",
           description: "You have been successfully signed in.",
         });
-        // Force page reload for clean state
-        window.location.href = '/';
+        
+        // Redirect based on role
+        if (roleData?.role === 'admin') {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/';
+        }
       }
     } catch (error: any) {
       toast({
