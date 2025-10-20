@@ -425,12 +425,6 @@ const EnhancedTrionApp: React.FC = () => {
                   <div className="absolute top-full right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     <div className="p-2">
                       <button
-                        onClick={() => navigate('/admin')}
-                        className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition-colors"
-                      >
-                        Admin Panel
-                      </button>
-                      <button
                         onClick={handleSignOut}
                         className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-accent rounded-md transition-colors flex items-center gap-2"
                       >
