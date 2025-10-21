@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, Heart, ShoppingCart } from 'lucide-react';
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
   category: string;
   description: string;
   size?: string[];
-  color?: string[];
+  color?: string;
   material?: string;
   gender?: string;
   brand?: string;
@@ -18,12 +18,12 @@ interface Product {
 }
 interface RecommendationProps {
   products: Product[];
-  onAddToCart: (productId: number) => void;
-  onViewDetails: (productId: number) => void;
+  onAddToCart: (productId: string) => void;
+  onViewDetails: (productId: string) => void;
   userPreferences?: {
     browsingHistory: string[];
     purchaseHistory: string[];
-    savedItems: number[];
+    savedItems: string[];
     preferredSizes: string[];
     preferredColors: string[];
     preferredCategories: string[];

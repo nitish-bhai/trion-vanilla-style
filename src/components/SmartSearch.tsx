@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, X } from 'lucide-react';
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
   category: string;
   description: string;
   size?: string[];
-  color?: string[];
+  color?: string;
   material?: string;
   gender?: string;
   brand?: string;

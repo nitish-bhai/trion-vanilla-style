@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, Users, Package, ShoppingCart } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StatsCardProps {
   title: string;
@@ -32,32 +33,99 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, change, icon, color
 );
 
 const AdminStats: React.FC = () => {
-  const stats = [
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalUsers: 0,
+    totalProducts: 0,
+    totalOrders: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+    
+    // Set up real-time subscriptions
+    const productsChannel = supabase
+      .channel('stats-products')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, fetchStats)
+      .subscribe();
+
+    const ordersChannel = supabase
+      .channel('stats-orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchStats)
+      .subscribe();
+
+    const usersChannel = supabase
+      .channel('stats-profiles')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchStats)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(usersChannel);
+    };
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      // Fetch products count
+      const { count: productsCount } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch users count
+      const { count: usersCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch orders count and total revenue
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('total_amount');
+
+      const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+      const ordersCount = orders?.length || 0;
+
+      setStats({
+        totalRevenue,
+        totalUsers: usersCount || 0,
+        totalProducts: productsCount || 0,
+        totalOrders: ordersCount
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statsData = [
     {
       title: 'Total Revenue',
-      value: '₹2,45,890',
-      change: '+12.5% from last month',
+      value: loading ? '...' : `₹${stats.totalRevenue.toLocaleString()}`,
+      change: 'Real-time data',
       icon: <TrendingUp className="text-green-500" size={24} />,
       color: 'text-green-500'
     },
     {
       title: 'Total Users',
-      value: '1,234',
-      change: '+5.2% from last month',
+      value: loading ? '...' : stats.totalUsers.toString(),
+      change: 'Active users',
       icon: <Users className="text-primary" size={24} />,
       color: 'text-primary'
     },
     {
       title: 'Total Products',
-      value: '456',
-      change: '+8 new products',
+      value: loading ? '...' : stats.totalProducts.toString(),
+      change: 'In inventory',
       icon: <Package className="text-primary" size={24} />,
       color: 'text-primary'
     },
     {
       title: 'Total Orders',
-      value: '789',
-      change: '+15.8% from last month',
+      value: loading ? '...' : stats.totalOrders.toString(),
+      change: 'All time',
       icon: <ShoppingCart className="text-green-500" size={24} />,
       color: 'text-green-500'
     }
@@ -65,7 +133,7 @@ const AdminStats: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {stats.map((stat, index) => (
+      {statsData.map((stat, index) => (
         <StatsCard key={index} {...stat} />
       ))}
     </div>

@@ -16,20 +16,23 @@ import BrandFeatures from './BrandFeatures';
 import placeholderImage from '@/assets/trion-placeholder.jpg';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
   category: string;
   description: string;
   size?: string[];
-  color?: string[];
+  color?: string;
   material?: string;
   gender?: string;
   brand?: string;
   rating?: number;
   discount?: number;
-  images?: string[]; // Multiple images for product details
+  images?: string[];
+  stock?: number;
+  discount_percentage?: number;
+  is_trending?: boolean;
 }
 
 interface CartItem extends Product {
@@ -127,76 +130,78 @@ const EnhancedTrionApp: React.FC = () => {
     }
   };
 
-  // Generate enhanced product data
+  // Fetch products from Supabase
   useEffect(() => {
-    const generateEnhancedProducts = () => {
-      const categories = [
-        { name: 'T-Shirts', items: ['Cotton T-Shirt', 'Polo T-Shirt', 'Graphic T-Shirt', 'V-Neck T-Shirt'] },
-        { name: 'Shirts', items: ['Formal Shirt', 'Casual Shirt', 'Denim Shirt', 'Flannel Shirt'] },
-        { name: 'Hoodies', items: ['Pullover Hoodie', 'Zip Hoodie', 'Oversized Hoodie', 'Sports Hoodie'] },
-        { name: 'Dresses', items: ['Summer Dress', 'Evening Dress', 'Casual Dress', 'Formal Dress'] },
-        { name: 'Pants', items: ['Formal Pants', 'Casual Pants', 'Chinos', 'Track Pants'] },
-        { name: 'Jeans', items: ['Slim Fit Jeans', 'Regular Jeans', 'Skinny Jeans', 'Wide Leg Jeans'] },
-        { name: 'Shorts', items: ['Gym Shorts', 'Casual Shorts', 'Denim Shorts', 'Cargo Shorts'] },
-        { name: 'Shoes', items: ['Running Shoes', 'Casual Shoes', 'Formal Shoes', 'Boots'] },
-        { name: 'Sneakers', items: ['Basketball Sneakers', 'Lifestyle Sneakers', 'Running Sneakers', 'Retro Sneakers'] },
-        { name: 'Glasses', items: ['Sunglasses', 'Reading Glasses', 'Fashion Glasses', 'Sports Glasses'] },
-        { name: 'Watches', items: ['Sport Watch', 'Dress Watch', 'Smart Watch', 'Casual Watch'] },
-        { name: 'Bags', items: ['Backpack', 'Handbag', 'Tote Bag', 'Crossbody Bag'] }
-      ];
+    fetchProducts();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('products-store-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
+        () => {
+          fetchProducts();
+        }
+      )
+      .subscribe();
 
-      const colors = ['Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Pink', 'Purple', 'Orange', 'Brown', 'Gray', 'Navy'];
-      const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-      const materials = ['Cotton', 'Polyester', 'Wool', 'Silk', 'Denim', 'Leather'];
-      const genders = ['Men', 'Women', 'Unisex'];
-      const brands = ['TRION', 'StyleCraft', 'UrbanWear', 'ClassicFit', 'ModernEdge'];
-
-      const newProducts: Product[] = [];
-      let productId = 1;
-
-      categories.forEach(category => {
-        category.items.forEach(item => {
-          for (let variant = 1; variant <= 3; variant++) {
-            const randomColors = colors.sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 4) + 1);
-            const randomSizes = sizes.slice(0, Math.floor(Math.random() * 4) + 2);
-            const material = materials[Math.floor(Math.random() * materials.length)];
-            const gender = genders[Math.floor(Math.random() * genders.length)];
-            const brand = brands[Math.floor(Math.random() * brands.length)];
-            const basePrice = Math.floor(Math.random() * (4999 - 599 + 1)) + 599;
-            const discount = Math.random() > 0.7 ? Math.floor(Math.random() * 50) + 10 : undefined;
-            const rating = Math.floor(Math.random() * 2) + 4; // 4-5 stars
-
-            newProducts.push({
-              id: productId++,
-              name: `${brand} ${item} #${variant}`,
-              price: basePrice,
-              image: placeholderImage,
-              images: [placeholderImage, placeholderImage, placeholderImage], // Front, side, back views
-              category: category.name,
-              description: `Premium ${material.toLowerCase()} ${item.toLowerCase()} designed for comfort and style. Perfect for ${gender.toLowerCase()} who appreciate quality fashion.`,
-              size: randomSizes,
-              color: randomColors,
-              material,
-              gender: gender.toLowerCase(),
-              brand,
-              rating,
-              discount
-            });
-          }
-        });
-      });
-
-      setProducts(newProducts);
-      setFilteredProducts(newProducts);
-      setIsLoading(false);
+    return () => {
+      supabase.removeChannel(channel);
     };
-
-    // Simulate loading time
-    setTimeout(generateEnhancedProducts, 1500);
   }, []);
 
+  const fetchProducts = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transform database products to match the frontend format
+      const transformedProducts: Product[] = (data || []).map(product => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: (product.images as string[] | null)?.[0] || placeholderImage,
+        images: (product.images as string[] | null) || [placeholderImage],
+        category: product.category,
+        description: product.description || '',
+        size: (product.sizes as string[] | null) || [],
+        color: product.color,
+        material: product.material || undefined,
+        gender: product.gender || undefined,
+        brand: product.brand,
+        rating: product.rating || 4,
+        discount: product.discount_percentage || undefined,
+        stock: product.stock,
+        discount_percentage: product.discount_percentage,
+        is_trending: product.is_trending
+      }));
+
+      setProducts(transformedProducts);
+      setFilteredProducts(transformedProducts);
+    } catch (error: any) {
+      console.error('Error fetching products:', error);
+      toast({
+        title: "Error loading products",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Cart functionality
-  const addToCart = (productId: number) => {
+  const addToCart = (productId: string) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
@@ -222,7 +227,7 @@ const EnhancedTrionApp: React.FC = () => {
     });
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = (productId: string) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
@@ -233,7 +238,7 @@ const EnhancedTrionApp: React.FC = () => {
     });
   };
 
-  const updateCartQuantity = (productId: number, quantity: number) => {
+  const updateCartQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;

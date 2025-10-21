@@ -17,6 +17,10 @@ interface Product {
   discount_percentage: number;
   is_trending: boolean;
   created_at: string;
+  images: string[];
+  sizes: string[];
+  material: string;
+  gender: string;
 }
 
 const ProductManagement: React.FC = () => {
@@ -38,13 +42,38 @@ const ProductManagement: React.FC = () => {
     color: '',
     stock: 0,
     discount_percentage: 0,
-    is_trending: false
+    is_trending: false,
+    sizes: [] as string[],
+    material: '',
+    gender: ''
   });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const categories = ['T-Shirts', 'Shirts', 'Hoodies', 'Dresses', 'Pants', 'Jeans', 'Shorts', 'Shoes', 'Sneakers', 'Watches', 'Glasses', 'Bags'];
 
   useEffect(() => {
     fetchProducts();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
+        () => {
+          fetchProducts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchProducts = async () => {
@@ -55,7 +84,28 @@ const ProductManagement: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Transform database products to match the interface
+      const transformedProducts: Product[] = (data || []).map(product => ({
+        id: product.id,
+        name: product.name,
+        description: product.description || '',
+        price: product.price,
+        category: product.category,
+        brand: product.brand,
+        color: product.color,
+        stock: product.stock || 0,
+        rating: product.rating || 0,
+        discount_percentage: product.discount_percentage || 0,
+        is_trending: product.is_trending || false,
+        created_at: product.created_at,
+        images: (product.images as string[] | null) || [],
+        sizes: (product.sizes as string[] | null) || [],
+        material: product.material || '',
+        gender: product.gender || ''
+      }));
+      
+      setProducts(transformedProducts);
     } catch (error: any) {
       toast({
         title: "Error fetching products",
@@ -67,12 +117,74 @@ const ProductManagement: React.FC = () => {
     }
   };
 
+  const uploadImages = async () => {
+    if (imageFiles.length === 0) return [];
+    
+    setUploadingImages(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of imageFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error uploading images",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setUploadingImages(false);
+    }
+
+    return uploadedUrls;
+  };
+
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const imageUrls = await uploadImages();
+      
+      const productData: any = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        category: formData.category,
+        brand: formData.brand,
+        color: formData.color,
+        stock: formData.stock,
+        discount_percentage: formData.discount_percentage,
+        is_trending: formData.is_trending,
+        material: formData.material || null,
+        gender: formData.gender || null
+      };
+      
+      if (imageUrls.length > 0) {
+        productData.images = imageUrls;
+      }
+      
+      if (formData.sizes.length > 0) {
+        productData.sizes = formData.sizes;
+      }
+      
       const { error } = await supabase
         .from('products')
-        .insert([formData]);
+        .insert([productData]);
 
       if (error) throw error;
 
@@ -83,6 +195,7 @@ const ProductManagement: React.FC = () => {
       
       resetForm();
       setShowAddModal(false);
+      setImageFiles([]);
       fetchProducts();
     } catch (error: any) {
       toast({
@@ -98,9 +211,34 @@ const ProductManagement: React.FC = () => {
     if (!editingProduct) return;
 
     try {
+      const productData: any = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        category: formData.category,
+        brand: formData.brand,
+        color: formData.color,
+        stock: formData.stock,
+        discount_percentage: formData.discount_percentage,
+        is_trending: formData.is_trending,
+        material: formData.material || null,
+        gender: formData.gender || null
+      };
+      
+      // Upload new images if any
+      if (imageFiles.length > 0) {
+        const newImageUrls = await uploadImages();
+        const existingImages = editingProduct.images || [];
+        productData.images = [...existingImages, ...newImageUrls];
+      }
+      
+      if (formData.sizes.length > 0) {
+        productData.sizes = formData.sizes;
+      }
+
       const { error } = await supabase
         .from('products')
-        .update(formData)
+        .update(productData)
         .eq('id', editingProduct.id);
 
       if (error) throw error;
@@ -112,6 +250,7 @@ const ProductManagement: React.FC = () => {
       
       resetForm();
       setEditingProduct(null);
+      setImageFiles([]);
       fetchProducts();
     } catch (error: any) {
       toast({
@@ -158,8 +297,12 @@ const ProductManagement: React.FC = () => {
       color: '',
       stock: 0,
       discount_percentage: 0,
-      is_trending: false
+      is_trending: false,
+      sizes: [],
+      material: '',
+      gender: ''
     });
+    setImageFiles([]);
   };
 
   const openEditModal = (product: Product) => {
@@ -172,8 +315,12 @@ const ProductManagement: React.FC = () => {
       color: product.color,
       stock: product.stock || 0,
       discount_percentage: product.discount_percentage || 0,
-      is_trending: product.is_trending || false
+      is_trending: product.is_trending || false,
+      sizes: product.sizes || [],
+      material: product.material || '',
+      gender: product.gender || ''
     });
+    setImageFiles([]);
     setEditingProduct(product);
   };
 
@@ -437,6 +584,61 @@ const ProductManagement: React.FC = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium mb-1">Sizes (comma separated)</label>
+                <input
+                  type="text"
+                  value={formData.sizes.join(', ')}
+                  onChange={(e) => setFormData({...formData, sizes: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  placeholder="S, M, L, XL"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Material</label>
+                  <input
+                    type="text"
+                    value={formData.material}
+                    onChange={(e) => setFormData({...formData, material: e.target.value})}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                    placeholder="Cotton, Polyester..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Gender</label>
+                  <select
+                    value={formData.gender}
+                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="men">Men</option>
+                    <option value="women">Women</option>
+                    <option value="unisex">Unisex</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Product Images</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setImageFiles(files);
+                  }}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upload multiple images for your product
+                </p>
+              </div>
+
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -451,9 +653,10 @@ const ProductManagement: React.FC = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  disabled={uploadingImages}
+                  className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  {editingProduct ? 'Update Product' : 'Add Product'}
+                  {uploadingImages ? 'Uploading...' : editingProduct ? 'Update Product' : 'Add Product'}
                 </button>
                 <button
                   type="button"
