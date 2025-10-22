@@ -56,7 +56,7 @@ const EnhancedTrionApp: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [activeFilters, setActiveFilters] = useState<any>({
-    priceRange: [0, 10000],
+    maxPrice: 10000,
     categories: [],
     sizes: [],
     colors: [],
@@ -299,10 +299,9 @@ const EnhancedTrionApp: React.FC = () => {
   const applyFilters = (filters: any) => {
     let filtered = [...products];
 
-    // Apply price range filter
+    // Apply price filter
     filtered = filtered.filter(product => 
-      product.price >= filters.priceRange[0] && 
-      product.price <= filters.priceRange[1]
+      product.price <= filters.maxPrice
     );
 
     // Apply category filter

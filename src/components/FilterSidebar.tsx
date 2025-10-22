@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
 interface FilterOptions {
-  priceRange: [number, number];
+  maxPrice: number;
   categories: string[];
   sizes: string[];
   colors: string[];
@@ -42,7 +42,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   );
   
   const [filters, setFilters] = useState<FilterOptions>({
-    priceRange: [0, 10000],
+    maxPrice: 10000,
     categories: [],
     sizes: [],
     colors: [],
@@ -81,14 +81,14 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   };
 
   const handlePriceChange = (value: number[]) => {
-    const newFilters = { ...filters, priceRange: value as [number, number] };
+    const newFilters = { ...filters, maxPrice: value[0] };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
 
   const clearAllFilters = () => {
     const clearedFilters = {
-      priceRange: [0, 10000] as [number, number],
+      maxPrice: 10000,
       categories: [],
       sizes: [],
       colors: [],
@@ -188,13 +188,13 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     min={0}
                     max={10000}
                     step={100}
-                    value={filters.priceRange}
+                    value={[filters.maxPrice]}
                     onValueChange={handlePriceChange}
                     className="w-full"
                   />
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>₹{filters.priceRange[0]}</span>
-                    <span>₹{filters.priceRange[1]}</span>
+                    <span>₹0</span>
+                    <span>₹{filters.maxPrice.toLocaleString()}</span>
                   </div>
                 </div>
               </FilterSection>
