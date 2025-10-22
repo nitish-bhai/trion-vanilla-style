@@ -9,7 +9,7 @@ interface Product {
   category: string;
   description: string;
   size?: string[];
-  color?: string;
+  color?: string[];
   material?: string;
   gender?: string;
   brand?: string;
@@ -53,7 +53,7 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
     similarToViewed: [],
     newArrivals: []
   });
-  const [likedItems, setLikedItems] = useState<Set<number>>(new Set());
+  const [likedItems, setLikedItems] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (products.length > 0) {
       generateRecommendations();
@@ -78,7 +78,7 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
       );
       const colorMatch = userPreferences.preferredColors.some(color => 
         product.name.toLowerCase().includes(color) || 
-        (product.color && product.color.some(c => c.toLowerCase().includes(color)))
+        (product.color && Array.isArray(product.color) && product.color.some(c => c.toLowerCase().includes(color)))
       );
       return categoryMatch || colorMatch;
     }).slice(0, 12);
@@ -92,7 +92,7 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
     }).slice(0, 12);
 
     // New arrivals (simulate with random selection but deterministic)
-    const shuffled = productsCopy.sort((a, b) => a.id - b.id);
+    const shuffled = productsCopy.sort((a, b) => a.id.localeCompare(b.id));
     const newArrivals = shuffled.slice(0, 12);
     
     setRecommendations({
@@ -102,7 +102,7 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
       newArrivals
     });
   };
-  const toggleLike = (productId: number) => {
+  const toggleLike = (productId: string) => {
     setLikedItems(prev => {
       const newLiked = new Set(prev);
       if (newLiked.has(productId)) {
@@ -170,7 +170,7 @@ const ProductRecommendations: React.FC<RecommendationProps> = ({
           </div>
 
           {/* Colors */}
-          {product.color && <div className="flex gap-1">
+          {product.color && Array.isArray(product.color) && <div className="flex gap-1">
               {product.color.slice(0, 4).map((color, idx) => <div key={idx} className="w-4 h-4 rounded-full border border-gray-300" style={{
             backgroundColor: color.toLowerCase()
           }} title={color} />)}

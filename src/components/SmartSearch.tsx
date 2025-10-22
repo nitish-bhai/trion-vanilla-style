@@ -9,7 +9,7 @@ interface Product {
   category: string;
   description: string;
   size?: string[];
-  color?: string;
+  color?: string[];
   material?: string;
   gender?: string;
   brand?: string;
@@ -113,7 +113,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
     return products.filter(product => {
       const matchesCategory = !searchFilters.category || product.category.toLowerCase().includes(searchFilters.category) || product.name.toLowerCase().includes(searchFilters.category);
       const matchesPrice = !searchFilters.priceRange || product.price >= searchFilters.priceRange[0] && product.price <= searchFilters.priceRange[1];
-      const matchesColor = !searchFilters.color || product.name.toLowerCase().includes(searchFilters.color) || product.color && product.color.some(c => c.toLowerCase().includes(searchFilters.color!));
+      const matchesColor = !searchFilters.color || product.name.toLowerCase().includes(searchFilters.color) || (product.color && Array.isArray(product.color) && product.color.some(c => c.toLowerCase().includes(searchFilters.color!)));
       const matchesSize = !searchFilters.size || product.size && product.size.includes(searchFilters.size);
       const matchesMaterial = !searchFilters.material || product.name.toLowerCase().includes(searchFilters.material) || product.material && product.material.toLowerCase().includes(searchFilters.material);
       const matchesGender = !searchFilters.gender || product.gender && product.gender.toLowerCase() === searchFilters.gender;

@@ -23,7 +23,7 @@ interface Product {
   category: string;
   description: string;
   size?: string[];
-  color?: string;
+  color?: string[];
   material?: string;
   gender?: string;
   brand?: string;
@@ -175,7 +175,9 @@ const EnhancedTrionApp: React.FC = () => {
         category: product.category,
         description: product.description || '',
         size: (product.sizes as string[] | null) || [],
-        color: product.color,
+        color: typeof product.color === 'string' && product.color 
+          ? product.color.split(',').map(c => c.trim()).filter(Boolean) 
+          : (product.color as unknown as string[] | null) || undefined,
         material: product.material || undefined,
         gender: product.gender || undefined,
         brand: product.brand,
