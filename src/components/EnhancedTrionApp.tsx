@@ -2,15 +2,16 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, SlidersHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 // Components
 import HeroSection from './HeroSection';
-import SmartSearch from './SmartSearch';
 import ProductRecommendations from './ProductRecommendations';
 import BrandFeatures from './BrandFeatures';
+import ExpandableSearch from './ExpandableSearch';
+import FilterSidebar from './FilterSidebar';
 
 // Import multiple product images for better showcase
 import placeholderImage from '@/assets/trion-placeholder.jpg';
@@ -52,7 +53,18 @@ const EnhancedTrionApp: React.FC = () => {
   const [currentSearchPrompt, setCurrentSearchPrompt] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [activeFilters, setActiveFilters] = useState<any>({
+    priceRange: [0, 10000],
+    categories: [],
+    sizes: [],
+    colors: [],
+    materials: [],
+    genders: [],
+    brands: [],
+    ratings: []
+  });
   
   // Authentication state
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -252,15 +264,129 @@ const EnhancedTrionApp: React.FC = () => {
   };
 
   // Search functionality
-  const handleSearch = (searchedProducts: Product[]) => {
-    setFilteredProducts(searchedProducts);
-    setShowRecommendations(searchedProducts.length === products.length);
+  const handleSearch = (query: string) => {
+    if (!query.trim()) {
+      setFilteredProducts(products);
+      setShowRecommendations(true);
+      setCurrentSearchPrompt('');
+      return;
+    }
+
+    const searchQuery = query.toLowerCase();
+    const filtered = products.filter(product =>
+      product.name.toLowerCase().includes(searchQuery) ||
+      product.category.toLowerCase().includes(searchQuery) ||
+      product.brand.toLowerCase().includes(searchQuery) ||
+      product.description?.toLowerCase().includes(searchQuery)
+    );
+
+    setFilteredProducts(filtered);
+    setShowRecommendations(false);
+    setCurrentSearchPrompt(query);
   };
 
   const handlePromptSearch = (prompt: string) => {
     setCurrentSearchPrompt(prompt);
+    handleSearch(prompt);
+  };
+
+  // Filter functionality
+  const handleFilterChange = (filters: any) => {
+    setActiveFilters(filters);
+    applyFilters(filters);
+  };
+
+  const applyFilters = (filters: any) => {
+    let filtered = [...products];
+
+    // Apply price range filter
+    filtered = filtered.filter(product => 
+      product.price >= filters.priceRange[0] && 
+      product.price <= filters.priceRange[1]
+    );
+
+    // Apply category filter
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter(product =>
+        filters.categories.some((cat: string) => 
+          product.category.toLowerCase().includes(cat.toLowerCase())
+        )
+      );
+    }
+
+    // Apply gender filter
+    if (filters.genders.length > 0) {
+      filtered = filtered.filter(product =>
+        product.gender && filters.genders.some((g: string) =>
+          product.gender?.toLowerCase() === g.toLowerCase()
+        )
+      );
+    }
+
+    // Apply size filter
+    if (filters.sizes.length > 0) {
+      filtered = filtered.filter(product =>
+        product.size && product.size.some((s: string) =>
+          filters.sizes.includes(s)
+        )
+      );
+    }
+
+    // Apply color filter
+    if (filters.colors.length > 0) {
+      filtered = filtered.filter(product =>
+        product.color && product.color.some((c: string) =>
+          filters.colors.includes(c)
+        )
+      );
+    }
+
+    // Apply material filter
+    if (filters.materials.length > 0) {
+      filtered = filtered.filter(product =>
+        product.material && filters.materials.some((m: string) =>
+          product.material?.toLowerCase().includes(m.toLowerCase())
+        )
+      );
+    }
+
+    // Apply brand filter
+    if (filters.brands.length > 0) {
+      filtered = filtered.filter(product =>
+        filters.brands.includes(product.brand)
+      );
+    }
+
+    // Apply rating filter
+    if (filters.ratings.length > 0) {
+      const minRating = Math.min(...filters.ratings);
+      filtered = filtered.filter(product =>
+        (product.rating || 0) >= minRating
+      );
+    }
+
+    setFilteredProducts(filtered);
     setShowRecommendations(false);
   };
+
+  // Extract available filters from products
+  const availableFilters = useMemo(() => {
+    const categories = [...new Set(products.map(p => p.category))].filter(Boolean);
+    const sizes = [...new Set(products.flatMap(p => p.size || []))].filter(Boolean);
+    const colors = [...new Set(products.flatMap(p => p.color || []))].filter(Boolean);
+    const materials = [...new Set(products.map(p => p.material).filter(Boolean))];
+    const genders = [...new Set(products.map(p => p.gender).filter(Boolean))];
+    const brands = [...new Set(products.map(p => p.brand))].filter(Boolean);
+
+    return {
+      categories,
+      sizes,
+      colors,
+      materials,
+      genders,
+      brands
+    };
+  }, [products]);
 
   // Category filtering logic
   const filterProductsByCategory = useMemo(() => {
@@ -373,12 +499,18 @@ const EnhancedTrionApp: React.FC = () => {
             </motion.h1>
 
             {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 hover:bg-muted rounded-full"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            <div className="md:hidden flex items-center gap-2">
+              <ExpandableSearch
+                onSearch={handleSearch}
+                onPromptSearch={handlePromptSearch}
+              />
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 hover:bg-muted rounded-full"
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-6">
@@ -400,6 +532,33 @@ const EnhancedTrionApp: React.FC = () => {
                   </motion.button>
                 ))}
               </nav>
+
+              {/* Search & Filter */}
+              <div className="flex items-center gap-2">
+                <motion.button
+                  onClick={() => setIsFilterOpen(true)}
+                  className="p-3 hover:bg-muted rounded-full transition-colors relative"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Filters"
+                >
+                  <SlidersHorizontal size={24} className="text-foreground" />
+                  {(activeFilters.categories.length > 0 || 
+                    activeFilters.sizes.length > 0 || 
+                    activeFilters.colors.length > 0 ||
+                    activeFilters.brands.length > 0 ||
+                    activeFilters.materials.length > 0 ||
+                    activeFilters.genders.length > 0 ||
+                    activeFilters.ratings.length > 0) && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+                  )}
+                </motion.button>
+
+                <ExpandableSearch
+                  onSearch={handleSearch}
+                  onPromptSearch={handlePromptSearch}
+                />
+              </div>
 
               {/* Auth/Profile Section */}
               {user ? (
@@ -483,6 +642,25 @@ const EnhancedTrionApp: React.FC = () => {
                 transition={{ duration: 0.3 }}
               >
                 <nav className="flex flex-col gap-4 pt-4">
+                  {/* Search & Filter Buttons */}
+                  <div className="flex gap-2 px-4">
+                    <button
+                      onClick={() => {
+                        setIsFilterOpen(true);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent/80 transition-colors"
+                    >
+                      <SlidersHorizontal size={18} />
+                      Filters
+                      {(activeFilters.categories.length > 0 || 
+                        activeFilters.sizes.length > 0 || 
+                        activeFilters.colors.length > 0) && (
+                        <span className="w-2 h-2 bg-primary rounded-full" />
+                      )}
+                    </button>
+                  </div>
+
                   {/* Category Navigation */}
                   {['ALL', 'MEN', 'WOMEN', 'GEN Z', 'BRANDS'].map((category) => (
                     <button
@@ -516,29 +694,8 @@ const EnhancedTrionApp: React.FC = () => {
 
       {/* Main Content */}
       <main>
-        {/* Hero Section with Overlay Search */}
-        {showRecommendations && (
-          <HeroSection 
-            searchComponent={
-              <SmartSearch
-                products={products}
-                onSearch={handleSearch}
-                onPromptSearch={handlePromptSearch}
-              />
-            }
-          />
-        )}
-
-        {/* Search Bar for non-hero view */}
-        {!showRecommendations && (
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <SmartSearch
-              products={products}
-              onSearch={handleSearch}
-              onPromptSearch={handlePromptSearch}
-            />
-          </div>
-        )}
+        {/* Hero Section */}
+        {showRecommendations && <HeroSection />}
 
         {/* Content based on search state */}
         {showRecommendations ? (
@@ -763,6 +920,14 @@ const EnhancedTrionApp: React.FC = () => {
           </>
         )}
       </AnimatePresence>
+
+      {/* Filter Sidebar */}
+      <FilterSidebar
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onFilterChange={handleFilterChange}
+        availableFilters={availableFilters}
+      />
     </div>
   );
 };
