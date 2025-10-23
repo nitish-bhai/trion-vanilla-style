@@ -47,6 +47,7 @@ const ProductManagement: React.FC = () => {
     material: '',
     gender: ''
   });
+  const [sizesInput, setSizesInput] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
 
@@ -302,6 +303,7 @@ const ProductManagement: React.FC = () => {
       material: '',
       gender: ''
     });
+    setSizesInput('');
     setImageFiles([]);
   };
 
@@ -320,6 +322,7 @@ const ProductManagement: React.FC = () => {
       material: product.material || '',
       gender: product.gender || ''
     });
+    setSizesInput((product.sizes || []).join(', '));
     setImageFiles([]);
     setEditingProduct(product);
   };
@@ -588,8 +591,9 @@ const ProductManagement: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">Sizes (comma separated)</label>
                 <input
                   type="text"
-                  value={formData.sizes.join(', ')}
-                  onChange={(e) => setFormData({...formData, sizes: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})}
+                  value={sizesInput}
+                  onChange={(e) => setSizesInput(e.target.value)}
+                  onBlur={(e) => setFormData({...formData, sizes: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})}
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                   placeholder="S, M, L, XL"
                 />

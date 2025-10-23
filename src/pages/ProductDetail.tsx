@@ -59,88 +59,123 @@ const ProductDetail = () => {
   const [selectedCategory, setSelectedCategory] = useState('Upper body');
 
   useEffect(() => {
-    // Simulate API call
-    const loadProductData = () => {
-      const categories = ['Streetwear', 'Formal', 'Casual', 'Luxury', 'Sportswear'];
-      const colors = ['Black', 'White', 'Blue', 'Red', 'Green', 'Gray'];
-      const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-      const materials = ['Cotton', 'Polyester', 'Silk', 'Denim', 'Leather', 'Linen'];
-      
-      const category = categories[Math.floor(Math.random() * categories.length)];
-      const baseNames = ['Jacket', 'Hoodie', 'Shirt', 'Dress', 'Pants', 'Sneakers', 'Boots'];
-      const baseName = baseNames[Math.floor(Math.random() * baseNames.length)];
-      
-      const mockProduct: Product = {
-        id: parseInt(id || '1'),
-        name: `${category} ${baseName} #${id}`,
-        price: Math.floor(Math.random() * (2999 - 499 + 1)) + 499,
-        image: placeholderImage,
-        category,
-        description: `Premium ${category.toLowerCase()} ${baseName.toLowerCase()} crafted with attention to detail and modern design. This versatile piece combines comfort with style, making it perfect for any occasion. Features high-quality construction and contemporary aesthetic.`,
-        features: [
-          'Premium quality fabric',
-          'Modern fit design',
-          'Durable construction',
-          'Easy care instructions',
-          'Versatile styling options'
-        ],
-        colors: colors.slice(0, Math.floor(Math.random() * 4) + 2),
-        material: materials[Math.floor(Math.random() * materials.length)],
-        sizes: sizes
-      };
+    const fetchProductData = async () => {
+      if (!id) {
+        navigate('/');
+        return;
+      }
 
-      const mockSeller: Seller = {
-        id: Math.floor(Math.random() * 100) + 1,
-        name: `Seller ${Math.floor(Math.random() * 100) + 1}`,
-        storeName: `${category} Store`,
-        avatar: placeholderImage,
-        rating: Math.floor(Math.random() * 20) / 4 + 4, // 4.0 to 5.0
-        totalReviews: Math.floor(Math.random() * 1000) + 50,
-        joinedDate: '2023'
-      };
+      try {
+        setIsLoading(true);
+        
+        // Fetch the specific product
+        const { data: productData, error: productError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-      const mockReviews: Review[] = Array.from({ length: 8 }, (_, i) => ({
-        id: i + 1,
-        userName: `Customer ${i + 1}`,
-        rating: Math.floor(Math.random() * 2) + 4, // 4 or 5 stars
-        comment: [
-          'Great quality product, very satisfied!',
-          'Perfect fit and excellent material.',
-          'Exactly as described, fast delivery.',
-          'Love the design and comfort.',
-          'Highly recommended seller!',
-          'Amazing product, will buy again.',
-          'Good value for money.',
-          'Excellent customer service.'
-        ][i] || 'Great product!',
-        date: `2024-${Math.floor(Math.random() * 12) + 1}-${Math.floor(Math.random() * 28) + 1}`,
-        verified: Math.random() > 0.2
-      }));
+        if (productError) throw productError;
 
-      const mockSimilar: Product[] = Array.from({ length: 6 }, (_, i) => ({
-        id: (parseInt(id || '1') + i + 1) * 10,
-        name: `${category} ${baseName} #${i + 10}`,
-        price: Math.floor(Math.random() * (2999 - 499 + 1)) + 499,
-        image: placeholderImage,
-        category,
-        description: `Similar ${category.toLowerCase()} ${baseName.toLowerCase()} with premium quality.`,
-        features: [],
-        colors: [],
-        material: materials[Math.floor(Math.random() * materials.length)],
-        sizes: []
-      }));
+        if (!productData) {
+          navigate('/');
+          return;
+        }
 
-      setProduct(mockProduct);
-      setSeller(mockSeller);
-      setReviews(mockReviews);
-      setSimilarProducts(mockSimilar);
-      setSelectedColor(mockProduct.colors[0]);
-      setSelectedSize(mockProduct.sizes[2]);
-      setIsLoading(false);
+        // Transform to match Product interface
+        const transformedProduct: Product = {
+          id: parseInt(productData.id) || 0,
+          name: productData.name,
+          price: productData.price,
+          image: (productData.images as string[])?.[0] || placeholderImage,
+          category: productData.category,
+          description: productData.description || '',
+          features: [
+            'Premium quality fabric',
+            'Modern fit design',
+            'Durable construction',
+            'Easy care instructions',
+            'Versatile styling options'
+          ],
+          colors: [productData.color],
+          material: productData.material || 'Premium Material',
+          sizes: (productData.sizes as string[]) || []
+        };
+
+        setProduct(transformedProduct);
+        setSelectedColor(transformedProduct.colors[0]);
+        setSelectedSize(transformedProduct.sizes[0] || '');
+
+        // Mock seller data (can be replaced with actual seller data later)
+        const mockSeller: Seller = {
+          id: 1,
+          name: productData.brand || 'Seller',
+          storeName: `${productData.brand || 'Brand'} Store`,
+          avatar: placeholderImage,
+          rating: 4.5,
+          totalReviews: 120,
+          joinedDate: '2023'
+        };
+        setSeller(mockSeller);
+
+        // Mock reviews
+        const mockReviews: Review[] = Array.from({ length: 8 }, (_, i) => ({
+          id: i + 1,
+          userName: `Customer ${i + 1}`,
+          rating: Math.floor(Math.random() * 2) + 4,
+          comment: [
+            'Great quality product, very satisfied!',
+            'Perfect fit and excellent material.',
+            'Exactly as described, fast delivery.',
+            'Love the design and comfort.',
+            'Highly recommended seller!',
+            'Amazing product, will buy again.',
+            'Good value for money.',
+            'Excellent customer service.'
+          ][i] || 'Great product!',
+          date: `2024-${Math.floor(Math.random() * 12) + 1}-${Math.floor(Math.random() * 28) + 1}`,
+          verified: Math.random() > 0.2
+        }));
+        setReviews(mockReviews);
+
+        // Fetch similar products from the same category
+        const { data: similarData } = await supabase
+          .from('products')
+          .select('*')
+          .eq('category', productData.category)
+          .neq('id', id)
+          .limit(6);
+
+        if (similarData) {
+          const similarProducts: Product[] = similarData.map((p: any) => ({
+            id: parseInt(p.id) || 0,
+            name: p.name,
+            price: p.price,
+            image: (p.images as string[])?.[0] || placeholderImage,
+            category: p.category,
+            description: p.description || '',
+            features: [],
+            colors: [p.color],
+            material: p.material || '',
+            sizes: (p.sizes as string[]) || []
+          }));
+          setSimilarProducts(similarProducts);
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        toast({
+          title: "Error loading product",
+          description: "Unable to load product details",
+          variant: "destructive",
+        });
+        navigate('/');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setTimeout(loadProductData, 500);
-  }, [id]);
+    fetchProductData();
+  }, [id, navigate, toast]);
 
   const addToCart = () => {
     toast({
