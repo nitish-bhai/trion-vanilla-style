@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Menu, X, User, LogOut, SlidersHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { useCart } from '@/contexts/CartContext';
 
 // Components
 import HeroSection from './HeroSection';
@@ -36,18 +37,14 @@ interface Product {
   is_trending?: boolean;
 }
 
-interface CartItem extends Product {
-  quantity: number;
-}
-
 const EnhancedTrionApp: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { cart, addToCart: addToCartContext, removeFromCart, updateCartQuantity, cartItemCount, cartTotal, clearCart } = useCart();
   
   // State Management
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [currentSearchPrompt, setCurrentSearchPrompt] = useState('');
@@ -214,53 +211,12 @@ const EnhancedTrionApp: React.FC = () => {
     }
   };
 
-  // Cart functionality
+  // Wrapper for addToCart to match existing signature
   const addToCart = (productId: string) => {
     const product = products.find(p => p.id === productId);
-    if (!product) return;
-
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === productId);
-      if (existingItem) {
-        toast({
-          title: "Updated Cart",
-          description: `Increased quantity of ${product.name}`,
-        });
-        return prevCart.map(item =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        toast({
-          title: "Added to Cart",
-          description: `${product.name} added to your cart`,
-        });
-        return [...prevCart, { ...product, quantity: 1 }];
-      }
-    });
-  };
-
-  const removeFromCart = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-
-    setCart(prev => prev.filter(item => item.id !== productId));
-    toast({
-      title: "Removed from Cart",
-      description: `${product.name} removed from cart`,
-    });
-  };
-
-  const updateCartQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
+    if (product) {
+      addToCartContext(product);
     }
-
-    setCart(prev => prev.map(item =>
-      item.id === productId ? { ...item, quantity } : item
-    ));
   };
 
   // Search functionality
@@ -428,15 +384,6 @@ const EnhancedTrionApp: React.FC = () => {
     setIsMobileMenuOpen(false);
   };
 
-  // Cart calculations
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTotal = cart.reduce((sum, item) => {
-    const price = item.discount 
-      ? Math.round(item.price * (1 - item.discount / 100))
-      : item.price;
-    return sum + (price * item.quantity);
-  }, 0);
-
   const checkout = () => {
     // Check if user is logged in
     if (!user) {
@@ -453,7 +400,7 @@ const EnhancedTrionApp: React.FC = () => {
       title: "Order Placed Successfully!",
       description: `Thank you for your order of ₹${cartTotal.toLocaleString()}`,
     });
-    setCart([]);
+    clearCart();
     setIsCartOpen(false);
   };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -46,6 +47,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { addToCart: addToCartContext, cartItemCount } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [seller, setSeller] = useState<Seller | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -178,10 +180,21 @@ const ProductDetail = () => {
   }, [id, navigate, toast]);
 
   const addToCart = () => {
-    toast({
-      title: "Added to Cart",
-      description: `${product?.name} added to your cart`,
-    });
+    if (!product) return;
+    
+    const productForCart = {
+      id: product.id.toString(),
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      category: product.category,
+      description: product.description,
+      color: product.colors,
+      material: product.material,
+      size: product.sizes
+    };
+    
+    addToCartContext(productForCart, selectedSize, selectedColor);
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,12 +300,29 @@ const ProductDetail = () => {
       {/* Header */}
       <header className="bg-card shadow-sm border-b border-border sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Store
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Store
+              </Button>
+              <h1 className="text-2xl font-bold text-foreground">TRION</h1>
+            </div>
+            
+            {/* Cart Icon with Badge */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative"
+              onClick={() => navigate('/')}
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {cartItemCount}
+                </span>
+              )}
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">TRION</h1>
           </div>
         </div>
       </header>
