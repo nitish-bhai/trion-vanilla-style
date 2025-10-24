@@ -13,6 +13,7 @@ import ProductRecommendations from './ProductRecommendations';
 import BrandFeatures from './BrandFeatures';
 import ExpandableSearch from './ExpandableSearch';
 import FilterSidebar from './FilterSidebar';
+import CheckoutForm from './CheckoutForm';
 
 // Import multiple product images for better showcase
 import placeholderImage from '@/assets/trion-placeholder.jpg';
@@ -49,6 +50,7 @@ const EnhancedTrionApp: React.FC = () => {
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [currentSearchPrompt, setCurrentSearchPrompt] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -396,6 +398,13 @@ const EnhancedTrionApp: React.FC = () => {
       return;
     }
 
+    // Open checkout form
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleCheckoutSuccess = () => {
+    setIsCheckoutOpen(false);
     toast({
       title: "Order Placed Successfully!",
       description: `Thank you for your order of ₹${cartTotal.toLocaleString()}`,
@@ -874,6 +883,42 @@ const EnhancedTrionApp: React.FC = () => {
         onFilterChange={handleFilterChange}
         availableFilters={availableFilters}
       />
+
+      {/* Checkout Drawer */}
+      <AnimatePresence>
+        {isCheckoutOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 bg-black/50 z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCheckoutOpen(false)}
+            />
+            <motion.div
+              className="fixed right-0 top-0 h-full w-full max-w-2xl bg-card z-50 shadow-xl overflow-y-auto"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-foreground">Checkout</h2>
+                  <button
+                    onClick={() => setIsCheckoutOpen(false)}
+                    className="p-2 hover:bg-muted rounded-full"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <CheckoutForm onSuccess={handleCheckoutSuccess} />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -310,19 +310,20 @@ const ProductDetail = () => {
             </div>
             
             {/* Cart Icon with Badge */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="relative"
-              onClick={() => navigate('/')}
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {cartItemCount}
-                </span>
-              )}
-            </Button>
+            <Link to="/">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
