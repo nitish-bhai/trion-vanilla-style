@@ -19,7 +19,7 @@ interface CheckoutFormProps {
 const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSuccess }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { cart, cartTotal, clearCart } = useCart();
+  const { cart, cartTotal, clearCart, removeFromCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -46,6 +46,11 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSuccess }) => {
       ...prev,
       paymentMode: value
     }));
+  };
+
+  const isUuid = (value: unknown) => {
+    const str = String(value);
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(str);
   };
 
   const validateForm = () => {
@@ -87,6 +92,18 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSuccess }) => {
     
     if (cart.length === 0) {
       toast({ title: "Error", description: "Your cart is empty", variant: "destructive" });
+      return;
+    }
+
+    // Remove any invalid items with non-UUID IDs (from older sessions)
+    const invalidItems = cart.filter((item) => !isUuid(item.id));
+    if (invalidItems.length > 0) {
+      invalidItems.forEach((it) => removeFromCart(String(it.id)));
+      toast({
+        title: "Cart Updated",
+        description: `Removed ${invalidItems.length} item(s) with invalid IDs. Please review your cart and place the order again.`,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -142,6 +159,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSuccess }) => {
         size: item.selectedSize || null,
         color: item.selectedColor || null
       }));
+
+      console.log('Order Items product_ids:', orderItems.map(i => i.product_id));
 
       const { error: itemsError } = await supabase
         .from('order_items')
