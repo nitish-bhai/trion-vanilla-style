@@ -12,7 +12,7 @@ import { Star, ArrowLeft, ShoppingCart, Heart, Share2, Shirt } from 'lucide-reac
 import placeholderImage from '@/assets/trion-placeholder.jpg';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
@@ -86,7 +86,7 @@ const ProductDetail = () => {
 
         // Transform to match Product interface
         const transformedProduct: Product = {
-          id: parseInt(productData.id) || 0,
+          id: productData.id,
           name: productData.name,
           price: productData.price,
           image: (productData.images as string[])?.[0] || placeholderImage,
@@ -150,7 +150,7 @@ const ProductDetail = () => {
 
         if (similarData) {
           const similarProducts: Product[] = similarData.map((p: any) => ({
-            id: parseInt(p.id) || 0,
+            id: p.id,
             name: p.name,
             price: p.price,
             image: (p.images as string[])?.[0] || placeholderImage,
@@ -183,7 +183,7 @@ const ProductDetail = () => {
     if (!product) return;
     
     const productForCart = {
-      id: product.id.toString(),
+      id: product.id,
       name: product.name,
       price: product.price,
       image: product.image,
