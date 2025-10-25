@@ -29,6 +29,8 @@ interface OrderItem {
   products?: {
     name: string;
     brand: string;
+    images: string[];
+    description: string;
   };
 }
 
@@ -55,7 +57,7 @@ const OrderManagement: React.FC = () => {
           *,
           order_items(
             *,
-            products(name, brand)
+            products(name, brand, images, description)
           )
         `)
         .order('created_at', { ascending: false });
@@ -317,50 +319,93 @@ const OrderManagement: React.FC = () => {
             </div>
 
             <div className="space-y-6">
-              {/* Order Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium mb-2">Order Information</h4>
-                  <p className="text-sm text-muted-foreground">ID: {selectedOrder.id}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Date: {new Date(selectedOrder.created_at).toLocaleString()}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Total: ₹{selectedOrder.total_amount.toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Customer</h4>
-                  <p className="text-sm">{selectedOrder.profiles?.full_name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedOrder.profiles?.email}</p>
-                </div>
-              </div>
-
-              {/* Shipping Address */}
-              <div>
-                <h4 className="font-medium mb-2">Shipping Address</h4>
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <pre className="text-sm whitespace-pre-wrap">
-                    {JSON.stringify(selectedOrder.shipping_address, null, 2)}
-                  </pre>
-                </div>
-              </div>
-
-              {/* Order Items */}
-              <div>
-                <h4 className="font-medium mb-2">Order Items</h4>
+              {/* Customer Information */}
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <h4 className="font-semibold mb-3 text-foreground">Customer Information</h4>
                 <div className="space-y-2">
+                  <p className="text-sm"><span className="font-medium">Name:</span> {selectedOrder.profiles?.full_name || 'N/A'}</p>
+                  <p className="text-sm"><span className="font-medium">Email:</span> {selectedOrder.profiles?.email || 'N/A'}</p>
+                </div>
+              </div>
+
+              {/* Shipping & Payment Details */}
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <h4 className="font-semibold mb-3 text-foreground">Shipping & Payment Details</h4>
+                <div className="space-y-2">
+                  <p className="text-sm"><span className="font-medium">Full Name:</span> {selectedOrder.shipping_address?.fullName || 'N/A'}</p>
+                  <p className="text-sm"><span className="font-medium">Phone:</span> {selectedOrder.shipping_address?.phone || 'N/A'}</p>
+                  <p className="text-sm">
+                    <span className="font-medium">Address:</span> {selectedOrder.shipping_address?.address || 'N/A'}
+                  </p>
+                  <p className="text-sm"><span className="font-medium">City:</span> {selectedOrder.shipping_address?.city || 'N/A'}</p>
+                  <p className="text-sm"><span className="font-medium">State:</span> {selectedOrder.shipping_address?.state || 'N/A'}</p>
+                  <p className="text-sm"><span className="font-medium">PIN Code:</span> {selectedOrder.shipping_address?.pinCode || 'N/A'}</p>
+                  <div className="pt-2 mt-2 border-t border-border">
+                    <p className="text-sm">
+                      <span className="font-medium">Payment Mode:</span> 
+                      <span className="ml-2 px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium uppercase">
+                        {selectedOrder.shipping_address?.paymentMode || 'N/A'}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Summary */}
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <h4 className="font-semibold mb-3 text-foreground">Order Summary</h4>
+                <div className="space-y-2">
+                  <p className="text-sm"><span className="font-medium">Order ID:</span> {selectedOrder.id}</p>
+                  <p className="text-sm"><span className="font-medium">Date:</span> {new Date(selectedOrder.created_at).toLocaleString()}</p>
+                  <p className="text-sm"><span className="font-medium">Status:</span> <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${getStatusColor(selectedOrder.status)}`}>
+                    {selectedOrder.status.toUpperCase()}
+                  </span></p>
+                  <p className="text-sm"><span className="font-medium">Payment Status:</span> <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${getPaymentStatusColor(selectedOrder.payment_status)}`}>
+                    {selectedOrder.payment_status.toUpperCase()}
+                  </span></p>
+                  <p className="text-sm font-semibold text-lg pt-2 mt-2 border-t border-border">
+                    Total Amount: ₹{selectedOrder.total_amount.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Order Items with Images */}
+              <div>
+                <h4 className="font-semibold mb-3 text-foreground">Order Items</h4>
+                <div className="space-y-3">
                   {selectedOrder.order_items?.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                      <div>
-                        <p className="font-medium">{item.products?.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.products?.brand} • Qty: {item.quantity}
-                          {item.size && ` • Size: ${item.size}`}
-                          {item.color && ` • Color: ${item.color}`}
-                        </p>
+                    <div key={item.id} className="flex gap-4 p-4 bg-muted/30 rounded-lg">
+                      {/* Product Image */}
+                      <div className="w-20 h-20 flex-shrink-0 bg-background rounded overflow-hidden">
+                        {item.products?.images && item.products.images.length > 0 ? (
+                          <img 
+                            src={item.products.images[0]} 
+                            alt={item.products.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            <Package size={24} />
+                          </div>
+                        )}
                       </div>
-                      <span className="font-medium">₹{item.price.toLocaleString()}</span>
+                      
+                      {/* Product Details */}
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">{item.products?.name}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{item.products?.brand}</p>
+                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                          <span className="px-2 py-1 bg-background rounded">Qty: {item.quantity}</span>
+                          {item.size && <span className="px-2 py-1 bg-background rounded">Size: {item.size}</span>}
+                          {item.color && <span className="px-2 py-1 bg-background rounded">Color: {item.color}</span>}
+                        </div>
+                      </div>
+                      
+                      {/* Price */}
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground">₹{item.price.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground mt-1">per item</p>
+                      </div>
                     </div>
                   ))}
                 </div>
