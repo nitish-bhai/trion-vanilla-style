@@ -1,1 +1,4 @@
 project_id = "cegewkyparolhwoisckv"
+
+[functions.virtual-tryon]
+verify_jwt = false
