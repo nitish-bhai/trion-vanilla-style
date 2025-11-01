@@ -17,6 +17,20 @@ function base64ToBlob(base64: string): Blob {
   return new Blob([bytes], { type: 'image/jpeg' });
 }
 
+// Helper function to convert array buffer to base64 (handles large images)
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 8192; // Process 8KB at a time
+  let binary = '';
+  
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  
+  return btoa(binary);
+}
+
 // Helper function to convert image URL to blob
 async function urlToBlob(url: string): Promise<Blob> {
   try {
@@ -164,7 +178,7 @@ serve(async (req) => {
 
     const imageBlob = await imageResponse.blob()
     const arrayBuffer = await imageBlob.arrayBuffer()
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const base64 = arrayBufferToBase64(arrayBuffer)
     const base64Image = `data:image/png;base64,${base64}`
 
     console.log('Virtual try-on successful')
