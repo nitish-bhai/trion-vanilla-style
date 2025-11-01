@@ -454,11 +454,11 @@ const ProductDetail = () => {
                           className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
                         />
                         {userImage && (
-                          <div className="mt-4">
+                          <div className="mt-4 bg-muted rounded-lg overflow-hidden">
                             <img
                               src={URL.createObjectURL(userImage)}
                               alt="User upload"
-                              className="w-full aspect-square object-cover rounded-lg"
+                              className="w-full max-h-[500px] object-contain rounded-lg"
                             />
                           </div>
                         )}
@@ -499,13 +499,15 @@ const ProductDetail = () => {
                     <div className="space-y-4">
                       <h3 className="font-semibold">Virtual Try-On Result</h3>
                       {tryOnResult ? (
-                        <img
-                          src={tryOnResult}
-                          alt="Try-on result"
-                          className="w-full aspect-square object-cover rounded-lg"
-                        />
+                        <div className="bg-muted rounded-lg overflow-hidden">
+                          <img
+                            src={tryOnResult}
+                            alt="Try-on result"
+                            className="w-full max-h-[500px] object-contain rounded-lg"
+                          />
+                        </div>
                       ) : (
-                        <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center text-muted-foreground text-center p-4">
+                        <div className="w-full min-h-[400px] bg-muted rounded-lg flex items-center justify-center text-muted-foreground text-center p-4">
                           <div>
                             <Shirt className="w-12 h-12 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">Your virtual try-on result will appear here</p>
