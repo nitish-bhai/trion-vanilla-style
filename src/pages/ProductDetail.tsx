@@ -472,7 +472,7 @@ const ProductDetail = () => {
                           <SelectContent>
                             <SelectItem value="Upper body">Upper Body</SelectItem>
                             <SelectItem value="Lower body">Lower Body</SelectItem>
-                            <SelectItem value="Dress">Dress</SelectItem>
+                            <SelectItem value="Full body">Full Body</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

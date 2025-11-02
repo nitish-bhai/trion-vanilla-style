@@ -115,8 +115,10 @@ serve(async (req) => {
       'Lower body': 'lower',
       'full': 'full_set',
       'Full body': 'full_set',
+      'Dress': 'full_set', // Map Dress to full_set for backwards compatibility
     }
     const clothType = clothTypeMap[category] || 'upper'
+    console.log(`Category: ${category}, Cloth type: ${clothType}`)
 
     // Create FormData for the request
     const formData = new FormData()
