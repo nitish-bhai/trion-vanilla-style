@@ -314,6 +314,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tryon_results: {
+        Row: {
+          created_at: string
+          id: string
+          person_image_url: string
+          result_image_url: string
+          user_id: string
+          wardrobe_item_ids: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          person_image_url: string
+          result_image_url: string
+          user_id: string
+          wardrobe_item_ids?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          person_image_url?: string
+          result_image_url?: string
+          user_id?: string
+          wardrobe_item_ids?: Json
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -334,6 +361,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      wardrobe_items: {
+        Row: {
+          brand: string | null
+          category: string
+          created_at: string
+          id: string
+          image_url: string
+          name: string
+          price: number | null
+          product_id: string | null
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          image_url: string
+          name: string
+          price?: number | null
+          product_id?: string | null
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          name?: string
+          price?: number | null
+          product_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wardrobe_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -22,6 +22,7 @@ interface Product {
   colors: string[];
   material: string;
   sizes: string[];
+  brand: string;
 }
 
 interface Seller {
@@ -55,12 +56,6 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [userImage, setUserImage] = useState<File | null>(null);
-  const [upperGarmentImage, setUpperGarmentImage] = useState<File | null>(null);
-  const [lowerGarmentImage, setLowerGarmentImage] = useState<File | null>(null);
-  const [tryOnResult, setTryOnResult] = useState<string | null>(null);
-  const [isTryOnLoading, setIsTryOnLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('Upper body');
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -103,7 +98,8 @@ const ProductDetail = () => {
           ],
           colors: [productData.color],
           material: productData.material || 'Premium Material',
-          sizes: (productData.sizes as string[]) || []
+          sizes: (productData.sizes as string[]) || [],
+          brand: productData.brand || 'Brand'
         };
 
         setProduct(transformedProduct);
@@ -161,7 +157,8 @@ const ProductDetail = () => {
             features: [],
             colors: [p.color],
             material: p.material || '',
-            sizes: (p.sizes as string[]) || []
+            sizes: (p.sizes as string[]) || [],
+            brand: p.brand || 'Brand'
           }));
           setSimilarProducts(similarProducts);
         }
@@ -199,133 +196,56 @@ const ProductDetail = () => {
     addToCartContext(productForCart, selectedSize, selectedColor);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setUserImage(file);
-      setTryOnResult(null);
-    }
-  };
+  const addToWardrobe = async () => {
+    if (!product) return;
 
-  const handleUpperGarmentUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setUpperGarmentImage(file);
-      setTryOnResult(null);
-    }
-  };
-
-  const handleLowerGarmentUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setLowerGarmentImage(file);
-      setTryOnResult(null);
-    }
-  };
-
-  const imageToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        // Remove the data URL prefix to get just base64
-        const base64 = result.split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleTryOn = async () => {
-    if (!userImage || !product) {
+    // Check if user is logged in
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       toast({
-        title: "Error",
-        description: "Please upload an image first",
+        title: "Authentication Required",
+        description: "Please sign in to add items to your wardrobe",
         variant: "destructive",
       });
+      navigate('/auth');
       return;
     }
 
-    // For full body, require both upper and lower garment images
-    if (selectedCategory === 'Full body' && (!upperGarmentImage || !lowerGarmentImage)) {
-      toast({
-        title: "Error",
-        description: "Please upload both upper and lower body garments for full body try-on",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsTryOnLoading(true);
-    
     try {
-      const personImageBase64 = await imageToBase64(userImage);
-      
-      if (selectedCategory === 'Full body') {
-        // For full body, convert both garment images to base64
-        const upperGarmentBase64 = upperGarmentImage ? await imageToBase64(upperGarmentImage) : '';
-        const lowerGarmentBase64 = lowerGarmentImage ? await imageToBase64(lowerGarmentImage) : '';
-        
-        const { data, error } = await supabase.functions.invoke('virtual-tryon', {
-          body: {
-            personImageBase64,
-            upperGarmentBase64,
-            lowerGarmentBase64,
-            category: selectedCategory,
-          },
+      const { error } = await supabase
+        .from('wardrobe_items')
+        .insert({
+          user_id: user.id,
+          product_id: product.id,
+          name: product.name,
+          image_url: product.image,
+          category: product.category,
+          brand: product.brand,
+          price: product.price,
         });
 
-        if (error) {
-          throw new Error(error.message || 'Virtual try-on failed');
-        }
+      if (error) throw error;
 
-        if (data?.success && data?.image) {
-          const imageData = data.image.startsWith('data:') ? data.image : `data:image/jpeg;base64,${data.image}`;
-          setTryOnResult(imageData);
-          toast({
-            title: "Try-On Complete!",
-            description: "Your virtual try-on is ready",
-          });
-        } else {
-          throw new Error('Invalid response from virtual try-on service');
-        }
-      } else {
-        // For single garment (upper or lower body only)
-        const garmentImageUrl = new URL(product.image, window.location.origin).href;
-        
-        const { data, error } = await supabase.functions.invoke('virtual-tryon', {
-          body: {
-            personImageBase64,
-            garmentImageUrl,
-            category: selectedCategory,
-          },
-        });
-
-        if (error) {
-          throw new Error(error.message || 'Virtual try-on failed');
-        }
-
-        if (data?.success && data?.image) {
-          const imageData = data.image.startsWith('data:') ? data.image : `data:image/jpeg;base64,${data.image}`;
-          setTryOnResult(imageData);
-          toast({
-            title: "Try-On Complete!",
-            description: "Your virtual try-on is ready",
-          });
-        } else {
-          throw new Error('Invalid response from virtual try-on service');
-        }
-      }
-    } catch (error) {
-      console.error('Try-on failed:', error);
       toast({
-        title: "Try-On Failed",
-        description: "Please try again later",
-        variant: "destructive",
+        title: "Added to Wardrobe!",
+        description: "Item has been added to your wardrobe",
       });
-    } finally {
-      setIsTryOnLoading(false);
+    } catch (error: any) {
+      console.error('Error adding to wardrobe:', error);
+      
+      // Check if item already exists
+      if (error.code === '23505') {
+        toast({
+          title: "Already in Wardrobe",
+          description: "This item is already in your wardrobe",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add item to wardrobe",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -470,164 +390,6 @@ const ProductDetail = () => {
               <Button onClick={addToCart} className="flex-1">
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Add to Cart
-              </Button>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="flex-1">
-                    <Shirt className="w-4 h-4 mr-2" />
-                    Virtual Try-On
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Virtual Try-On - {product.name}</DialogTitle>
-                    <DialogDescription>
-                      Upload your full body image to see how this item looks on you
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Selected Product */}
-                    <div className="space-y-4">
-                      <h3 className="font-semibold mb-2">Selected Item</h3>
-                      <div className="bg-muted rounded-lg p-4">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-full aspect-square object-cover rounded-lg mb-2"
-                        />
-                        <p className="text-sm font-medium">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">₹{product.price.toLocaleString()}</p>
-                      </div>
-                    </div>
-
-                    {/* User Upload */}
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-semibold mb-2">Upload Your Full Body Photo</h3>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
-                        />
-                        {userImage && (
-                          <div className="mt-4 bg-muted rounded-lg overflow-hidden">
-                            <img
-                              src={URL.createObjectURL(userImage)}
-                              alt="User upload"
-                              className="w-full max-h-[500px] object-contain rounded-lg"
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-2">Category</h3>
-                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Upper body">Upper Body</SelectItem>
-                            <SelectItem value="Lower body">Lower Body</SelectItem>
-                            <SelectItem value="Full body">Full Body</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Garment Selection for Full Body */}
-                      {selectedCategory === 'Full body' && (
-                        <div className="space-y-4 border-t pt-4">
-                          <h3 className="font-semibold">Select Garments</h3>
-                          
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Upper Body Garment</label>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleUpperGarmentUpload}
-                              className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
-                            />
-                            {upperGarmentImage && (
-                              <div className="mt-2 bg-muted rounded-lg overflow-hidden">
-                                <img
-                                  src={URL.createObjectURL(upperGarmentImage)}
-                                  alt="Upper garment"
-                                  className="w-full max-h-[150px] object-contain rounded-lg"
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Lower Body Garment</label>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleLowerGarmentUpload}
-                              className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
-                            />
-                            {lowerGarmentImage && (
-                              <div className="mt-2 bg-muted rounded-lg overflow-hidden">
-                                <img
-                                  src={URL.createObjectURL(lowerGarmentImage)}
-                                  alt="Lower garment"
-                                  className="w-full max-h-[150px] object-contain rounded-lg"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <Button 
-                        onClick={handleTryOn} 
-                        disabled={!userImage || isTryOnLoading || (selectedCategory === 'Full body' && (!upperGarmentImage || !lowerGarmentImage))}
-                        className="w-full"
-                      >
-                        {isTryOnLoading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Processing...
-                          </>
-                        ) : (
-                          'Try On This Item'
-                        )}
-                      </Button>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedCategory === 'Full body' 
-                          ? 'Upload upper and lower body garments for full body try-on'
-                          : 'Upload a clear, full-body photo for best results'}
-                      </p>
-                    </div>
-
-                    {/* Result */}
-                    <div className="space-y-4">
-                      <h3 className="font-semibold">Virtual Try-On Result</h3>
-                      {tryOnResult ? (
-                        <div className="bg-muted rounded-lg overflow-hidden">
-                          <img
-                            src={tryOnResult}
-                            alt="Try-on result"
-                            className="w-full max-h-[500px] object-contain rounded-lg"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full min-h-[400px] bg-muted rounded-lg flex items-center justify-center text-muted-foreground text-center p-4">
-                          <div>
-                            <Shirt className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">Your virtual try-on result will appear here</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <Button variant="outline" size="icon">
-                <Heart className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="icon">
-                <Share2 className="w-4 h-4" />
               </Button>
             </div>
           </div>
