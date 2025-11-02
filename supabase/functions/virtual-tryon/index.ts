@@ -84,24 +84,129 @@ serve(async (req) => {
   }
 
   try {
-    const { personImageBase64, garmentImageUrl, category = "upper" } = await req.json()
+    const { personImageBase64, garmentImageUrl, upperGarmentBase64, lowerGarmentBase64, category = "upper" } = await req.json()
 
-    if (!personImageBase64 || !garmentImageUrl) {
+    // Validate inputs based on category
+    if (!personImageBase64) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters: personImageBase64 and garmentImageUrl' }),
+        JSON.stringify({ error: 'Missing required parameter: personImageBase64' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    if (category === 'Full body' && (!upperGarmentBase64 || !lowerGarmentBase64)) {
+      return new Response(
+        JSON.stringify({ error: 'Full body try-on requires both upperGarmentBase64 and lowerGarmentBase64' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    if (category !== 'Full body' && !garmentImageUrl) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameter: garmentImageUrl' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
 
     console.log('Starting Fit Room virtual try-on process...')
-    console.log('Garment image URL:', garmentImageUrl)
+    console.log('Category:', category)
 
     const fitroomApiKey = Deno.env.get('FITROOM_API_KEY')
     if (!fitroomApiKey) {
       throw new Error('FITROOM_API_KEY not configured')
     }
 
-    // Convert images to blobs
+    // Handle Full Body with separate upper and lower garments
+    if (category === 'Full body' && upperGarmentBase64 && lowerGarmentBase64) {
+      console.log('Processing full body try-on with separate garments...')
+      
+      // Step 1: Apply upper body garment
+      console.log('Step 1: Applying upper body garment...')
+      const modelBlob = base64ToBlob(personImageBase64)
+      const upperClothBlob = base64ToBlob(upperGarmentBase64)
+
+      const upperFormData = new FormData()
+      upperFormData.append('model_image', modelBlob, 'model.jpg')
+      upperFormData.append('cloth_image', upperClothBlob, 'upper.jpg')
+      upperFormData.append('cloth_type', 'upper')
+      upperFormData.append('hd_mode', 'false')
+
+      const upperResponse = await fetch('https://platform.fitroom.app/api/tryon/v2/tasks', {
+        method: 'POST',
+        headers: { 'X-API-KEY': fitroomApiKey },
+        body: upperFormData,
+      })
+
+      if (!upperResponse.ok) {
+        const errorText = await upperResponse.text()
+        console.error('Upper body API error:', upperResponse.status, errorText)
+        throw new Error(`Upper body try-on failed: ${upperResponse.status}`)
+      }
+
+      const upperResult = await upperResponse.json()
+      console.log('Upper body task created:', upperResult.task_id)
+
+      const upperCompleted = await pollTaskStatus(upperResult.task_id, fitroomApiKey)
+      console.log('Upper body try-on completed')
+
+      // Download upper body result
+      const upperImageResponse = await fetch(upperCompleted.download_signed_url)
+      if (!upperImageResponse.ok) {
+        throw new Error('Failed to download upper body result')
+      }
+      const upperImageBlob = await upperImageResponse.blob()
+      
+      // Step 2: Apply lower body garment to the result from step 1
+      console.log('Step 2: Applying lower body garment...')
+      const lowerClothBlob = base64ToBlob(lowerGarmentBase64)
+
+      const lowerFormData = new FormData()
+      lowerFormData.append('model_image', upperImageBlob, 'model_with_upper.jpg')
+      lowerFormData.append('cloth_image', lowerClothBlob, 'lower.jpg')
+      lowerFormData.append('cloth_type', 'lower')
+      lowerFormData.append('hd_mode', 'false')
+
+      const lowerResponse = await fetch('https://platform.fitroom.app/api/tryon/v2/tasks', {
+        method: 'POST',
+        headers: { 'X-API-KEY': fitroomApiKey },
+        body: lowerFormData,
+      })
+
+      if (!lowerResponse.ok) {
+        const errorText = await lowerResponse.text()
+        console.error('Lower body API error:', lowerResponse.status, errorText)
+        throw new Error(`Lower body try-on failed: ${lowerResponse.status}`)
+      }
+
+      const lowerResult = await lowerResponse.json()
+      console.log('Lower body task created:', lowerResult.task_id)
+
+      const lowerCompleted = await pollTaskStatus(lowerResult.task_id, fitroomApiKey)
+      console.log('Lower body try-on completed')
+
+      // Download final result
+      const finalImageResponse = await fetch(lowerCompleted.download_signed_url)
+      if (!finalImageResponse.ok) {
+        throw new Error('Failed to download final result')
+      }
+
+      const finalImageBlob = await finalImageResponse.blob()
+      const finalArrayBuffer = await finalImageBlob.arrayBuffer()
+      const finalBase64 = arrayBufferToBase64(finalArrayBuffer)
+      const finalBase64Image = `data:image/png;base64,${finalBase64}`
+
+      console.log('Full body virtual try-on successful')
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          image: finalBase64Image 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Handle single garment try-on (Upper body or Lower body)
     console.log('Converting images to blobs...')
     const modelBlob = base64ToBlob(personImageBase64)
     const clothBlob = await urlToBlob(garmentImageUrl)
