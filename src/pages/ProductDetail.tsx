@@ -391,45 +391,14 @@ const ProductDetail = () => {
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Add to Cart
               </Button>
+              <Button onClick={addToWardrobe} variant="outline" className="flex-1">
+                <Shirt className="w-4 h-4 mr-2" />
+                Add to Wardrobe
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Seller Info */}
-        <div className="mt-12 bg-card rounded-lg p-6 border border-border">
-          <h2 className="text-xl font-semibold mb-4">Seller Information</h2>
-          <div className="flex items-center gap-4">
-            <img 
-              src={seller.avatar} 
-              alt={seller.name}
-              className="w-16 h-16 rounded-full object-cover"
-            />
-            <div className="flex-1">
-              <Link 
-                to={`/seller/${seller.id}`}
-                className="text-lg font-semibold text-primary hover:underline"
-              >
-                {seller.name}
-              </Link>
-              <p className="text-muted-foreground">{seller.storeName}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="flex items-center">
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`w-4 h-4 ${
-                        i < Math.floor(seller.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                      }`} 
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {seller.rating.toFixed(1)} ({seller.totalReviews} reviews)
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Reviews */}
         <div className="mt-12">
