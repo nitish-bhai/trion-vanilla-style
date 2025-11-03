@@ -211,6 +211,24 @@ const ProductDetail = () => {
       return;
     }
 
+    // Map product category to wardrobe category
+    const getWardrobeCategory = (productCategory: string): string => {
+      const upperBodyCategories = ['T-Shirts', 'Shirts', 'Hoodies', 'Jackets', 'Sweaters', 'Blazers'];
+      const lowerBodyCategories = ['Jeans', 'Pants', 'Shorts', 'Skirts', 'Trousers'];
+      const fullBodyCategories = ['Dresses', 'Jumpsuits', 'Overalls', 'Suits'];
+      
+      if (upperBodyCategories.some(cat => productCategory.toLowerCase().includes(cat.toLowerCase()))) {
+        return 'Upper body';
+      } else if (lowerBodyCategories.some(cat => productCategory.toLowerCase().includes(cat.toLowerCase()))) {
+        return 'Lower body';
+      } else if (fullBodyCategories.some(cat => productCategory.toLowerCase().includes(cat.toLowerCase()))) {
+        return 'Full body';
+      }
+      
+      // Default to upper body for accessories and unknown categories
+      return 'Upper body';
+    };
+
     try {
       const { error } = await supabase
         .from('wardrobe_items')
@@ -219,7 +237,7 @@ const ProductDetail = () => {
           product_id: product.id,
           name: product.name,
           image_url: product.image,
-          category: product.category,
+          category: getWardrobeCategory(product.category),
           brand: product.brand,
           price: product.price,
         });
