@@ -546,6 +546,13 @@ const EnhancedTrionApp: React.FC = () => {
                   <div className="absolute top-full right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     <div className="p-2">
                       <button
+                        onClick={() => navigate('/profile')}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-2"
+                      >
+                        <User size={16} />
+                        My Profile
+                      </button>
+                      <button
                         onClick={() => navigate('/wardrobe')}
                         className="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors flex items-center gap-2"
                       >
@@ -640,16 +647,28 @@ const EnhancedTrionApp: React.FC = () => {
                   
                   <div className="border-t border-border pt-4 space-y-2">
                     {user && (
-                      <button
-                        onClick={() => {
-                          navigate('/wardrobe');
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="flex items-center gap-2 text-left text-foreground hover:text-primary transition-colors px-4"
-                      >
-                        <ShoppingCart size={20} />
-                        My Wardrobe
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            navigate('/profile');
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="flex items-center gap-2 text-left text-foreground hover:text-primary transition-colors px-4"
+                        >
+                          <User size={20} />
+                          My Profile
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate('/wardrobe');
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="flex items-center gap-2 text-left text-foreground hover:text-primary transition-colors px-4"
+                        >
+                          <ShoppingCart size={20} />
+                          My Wardrobe
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => {
