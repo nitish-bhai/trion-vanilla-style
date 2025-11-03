@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Trash2, Shirt, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Trash2, Shirt, ShoppingCart, Download } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface WardrobeItem {
@@ -38,10 +38,18 @@ const Wardrobe = () => {
   const [tryOnResult, setTryOnResult] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [countdown, setCountdown] = useState<number>(0);
 
   useEffect(() => {
     checkUser();
   }, []);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -187,6 +195,7 @@ const Wardrobe = () => {
     }
 
     setIsTryOnLoading(true);
+    setCountdown(20);
     
     try {
       const personImageBase64 = await imageToBase64(userImage);
@@ -274,7 +283,17 @@ const Wardrobe = () => {
       });
     } finally {
       setIsTryOnLoading(false);
+      setCountdown(0);
     }
+  };
+
+  const downloadImage = (imageUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getSelectedItemsByCategory = () => {
@@ -388,7 +407,7 @@ const Wardrobe = () => {
                       {isTryOnLoading ? (
                         <>
                           <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Processing...
+                          {countdown > 0 ? `Wait ${countdown}s - Generating...` : 'Processing...'}
                         </>
                       ) : (
                         <>
@@ -494,14 +513,24 @@ const Wardrobe = () => {
                         alt="Try-on result"
                         className="w-full aspect-square object-cover"
                       />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                        onClick={() => deleteTryOnResult(result.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={() => downloadImage(result.result_image_url, `tryon-result-${result.id}.jpg`)}
+                          title="Download image"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => deleteTryOnResult(result.id)}
+                          title="Delete result"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                     <CardContent className="p-3">
                       <p className="text-xs text-muted-foreground">
