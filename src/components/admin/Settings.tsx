@@ -14,7 +14,22 @@ interface SiteSetting {
 
 const Settings: React.FC = () => {
   const { toast } = useToast();
-  const [settings, setSettings] = useState<SiteSetting[]>([]);
+  const [settings, setSettings] = useState<Record<string, any>>({
+    site_name: '',
+    site_description: '',
+    contact_email: '',
+    primary_color: '#000000',
+    secondary_color: '#ffffff',
+    currency: 'USD',
+    tax_rate: '0',
+    shipping_fee: '0',
+    facebook_url: '',
+    instagram_url: '',
+    twitter_url: '',
+    enable_email_notifications: true,
+    enable_sms_notifications: false,
+    fitroom_api_key: '',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -39,7 +54,8 @@ const Settings: React.FC = () => {
     email_notifications: true,
     order_notifications: true,
     marketing_emails: false,
-    maintenance_mode: false
+    maintenance_mode: false,
+    fitroom_api_key: ''
   };
 
   const [formData, setFormData] = useState(defaultSettings);
@@ -116,7 +132,8 @@ const Settings: React.FC = () => {
         updateSetting('email_notifications', formData.email_notifications, 'Enable email notifications'),
         updateSetting('order_notifications', formData.order_notifications, 'Enable order notifications'),
         updateSetting('marketing_emails', formData.marketing_emails, 'Enable marketing emails'),
-        updateSetting('maintenance_mode', formData.maintenance_mode, 'Maintenance mode status')
+        updateSetting('maintenance_mode', formData.maintenance_mode, 'Maintenance mode status'),
+        updateSetting('fitroom_api_key', formData.fitroom_api_key, 'FITROOM Virtual Try-On API Key')
       ]);
 
       toast({
@@ -153,12 +170,33 @@ const Settings: React.FC = () => {
     }));
   };
 
-  const handleUpdateFitroomApiKey = () => {
-    toast({
-      title: "Update API Key",
-      description: "Please enter your new FITROOM API key in the form below.",
-    });
-    // This will trigger the secrets update tool which will show a secure form
+  const handleUpdateFitroomApiKey = async () => {
+    if (!formData.fitroom_api_key || formData.fitroom_api_key.trim() === '') {
+      toast({
+        title: "Error",
+        description: "Please enter a valid API key",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await updateSetting('fitroom_api_key', formData.fitroom_api_key, 'FITROOM Virtual Try-On API Key');
+      toast({
+        title: "Success",
+        description: "FITROOM API key updated successfully. The virtual try-on feature will now use the new key.",
+      });
+      fetchSettings();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to update API key: " + error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -392,17 +430,24 @@ const Settings: React.FC = () => {
 
           <div className="space-y-4">
             <div>
-              <p className="font-medium mb-2">FITROOM Virtual Try-On API Key</p>
+              <label className="block font-medium mb-2">FITROOM Virtual Try-On API Key</label>
               <p className="text-sm text-muted-foreground mb-4">
                 Update your FITROOM API key when your trial credits expire or when you need to switch to a new key.
               </p>
+              <input
+                type="password"
+                value={formData.fitroom_api_key || ''}
+                onChange={(e) => handleInputChange('fitroom_api_key', e.target.value)}
+                placeholder="Enter your FITROOM API key"
+                className="w-full px-4 py-2 mb-4 rounded-md border border-input bg-background"
+              />
               <Button
                 onClick={handleUpdateFitroomApiKey}
-                variant="outline"
+                disabled={saving}
                 className="w-full"
               >
                 <Key className="w-4 h-4 mr-2" />
-                Update FITROOM API Key
+                {saving ? 'Updating...' : 'Update FITROOM API Key'}
               </Button>
             </div>
             <div className="bg-muted/50 p-4 rounded-lg">

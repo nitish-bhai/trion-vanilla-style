@@ -111,9 +111,33 @@ serve(async (req) => {
     console.log('Starting Fit Room virtual try-on process...')
     console.log('Category:', category)
 
-    const fitroomApiKey = Deno.env.get('FITROOM_API_KEY')
+    // First try to get API key from environment (for backward compatibility)
+    let fitroomApiKey = Deno.env.get('FITROOM_API_KEY')
+    
+    // If not in environment, fetch from database
     if (!fitroomApiKey) {
-      throw new Error('FITROOM_API_KEY not configured')
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabase configuration not found')
+      }
+
+      const settingsResponse = await fetch(`${supabaseUrl}/rest/v1/site_settings?setting_key=eq.fitroom_api_key&select=setting_value`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+      })
+
+      const settings = await settingsResponse.json()
+      if (settings && settings.length > 0) {
+        fitroomApiKey = settings[0].setting_value
+      }
+    }
+    
+    if (!fitroomApiKey) {
+      throw new Error('FITROOM_API_KEY not configured. Please set it in Admin Settings.')
     }
 
     // Handle Full Body with separate upper and lower garments
