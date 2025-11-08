@@ -39,9 +39,11 @@ const Wardrobe = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [countdown, setCountdown] = useState<number>(0);
+  const [provider, setProvider] = useState<string>('fitroom');
 
   useEffect(() => {
     checkUser();
+    fetchProvider();
   }, []);
 
   useEffect(() => {
@@ -60,6 +62,23 @@ const Wardrobe = () => {
     setUser(user);
     fetchWardrobeItems(user.id);
     fetchTryOnResults(user.id);
+  };
+
+  const fetchProvider = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'tryon_provider')
+        .single();
+
+      if (error) throw error;
+      if (data?.setting_value) {
+        setProvider(data.setting_value as string);
+      }
+    } catch (error) {
+      console.error('Error fetching provider:', error);
+    }
   };
 
   const fetchWardrobeItems = async (userId: string) => {
@@ -221,6 +240,7 @@ const Wardrobe = () => {
             upperGarmentBase64: upperBase64,
             lowerGarmentBase64: lowerBase64,
             category: 'Full body',
+            provider,
           },
         });
 
@@ -237,6 +257,7 @@ const Wardrobe = () => {
             personImageBase64,
             garmentImageUrl: item.image_url,
             category: item.category,
+            provider,
           },
         });
 
@@ -352,7 +373,15 @@ const Wardrobe = () => {
             {/* Try-On Section */}
             <Card>
               <CardContent className="pt-6">
-                <h2 className="text-xl font-semibold mb-4">Virtual Try-On</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Virtual Try-On</h2>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Provider:</span>
+                    <span className="font-medium">
+                      {provider === 'nano_banana' ? 'Nano Banana (AI)' : 'Fitroom'}
+                    </span>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Upload Photo */}
                   <div className="space-y-4">

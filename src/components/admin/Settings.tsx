@@ -55,7 +55,8 @@ const Settings: React.FC = () => {
     order_notifications: true,
     marketing_emails: false,
     maintenance_mode: false,
-    fitroom_api_key: ''
+    fitroom_api_key: '',
+    tryon_provider: 'fitroom'
   };
 
   const [formData, setFormData] = useState(defaultSettings);
@@ -133,7 +134,8 @@ const Settings: React.FC = () => {
         updateSetting('order_notifications', formData.order_notifications, 'Enable order notifications'),
         updateSetting('marketing_emails', formData.marketing_emails, 'Enable marketing emails'),
         updateSetting('maintenance_mode', formData.maintenance_mode, 'Maintenance mode status'),
-        updateSetting('fitroom_api_key', formData.fitroom_api_key, 'FITROOM Virtual Try-On API Key')
+        updateSetting('fitroom_api_key', formData.fitroom_api_key, 'FITROOM Virtual Try-On API Key'),
+        updateSetting('tryon_provider', formData.tryon_provider, 'Virtual Try-On Provider Selection')
       ]);
 
       toast({
@@ -421,39 +423,66 @@ const Settings: React.FC = () => {
           </div>
         </div>
 
-        {/* API Key Management */}
+        {/* Virtual Try-On Settings */}
         <div className="bg-card rounded-lg p-6 border border-border space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <Key className="text-primary" size={20} />
-            <h3 className="text-lg font-semibold">API Key Management</h3>
+            <h3 className="text-lg font-semibold">Virtual Try-On Settings</h3>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block font-medium mb-2">FITROOM Virtual Try-On API Key</label>
-              <p className="text-sm text-muted-foreground mb-4">
-                Update your FITROOM API key when your trial credits expire or when you need to switch to a new key.
+              <label className="block font-medium mb-2">Try-On Provider</label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Choose your virtual try-on provider
               </p>
-              <input
-                type="password"
-                value={formData.fitroom_api_key || ''}
-                onChange={(e) => handleInputChange('fitroom_api_key', e.target.value)}
-                placeholder="Enter your FITROOM API key"
-                className="w-full px-4 py-2 mb-4 rounded-md border border-input bg-background"
-              />
-              <Button
-                onClick={handleUpdateFitroomApiKey}
-                disabled={saving}
-                className="w-full"
+              <select
+                value={formData.tryon_provider}
+                onChange={(e) => handleInputChange('tryon_provider', e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary"
               >
-                <Key className="w-4 h-4 mr-2" />
-                {saving ? 'Updating...' : 'Update FITROOM API Key'}
-              </Button>
+                <option value="fitroom">Fitroom API</option>
+                <option value="nano_banana">Nano Banana (Lovable AI)</option>
+              </select>
             </div>
+
+            {formData.tryon_provider === 'fitroom' && (
+              <div>
+                <label className="block font-medium mb-2">FITROOM API Key</label>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Update your FITROOM API key when your trial credits expire or when you need to switch to a new key.
+                </p>
+                <input
+                  type="password"
+                  value={formData.fitroom_api_key || ''}
+                  onChange={(e) => handleInputChange('fitroom_api_key', e.target.value)}
+                  placeholder="Enter your FITROOM API key"
+                  className="w-full px-4 py-2 mb-4 rounded-md border border-input bg-background"
+                />
+                <Button
+                  onClick={handleUpdateFitroomApiKey}
+                  disabled={saving}
+                  className="w-full"
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  {saving ? 'Updating...' : 'Update FITROOM API Key'}
+                </Button>
+              </div>
+            )}
+
+            {formData.tryon_provider === 'nano_banana' && (
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <p className="text-sm font-medium">Nano Banana (Lovable AI)</p>
+                <p className="text-xs text-muted-foreground">
+                  Nano Banana uses Lovable AI Gateway with automatic authentication. No API key configuration needed.
+                  This provider uses AI-powered image generation for virtual try-on.
+                </p>
+              </div>
+            )}
+
             <div className="bg-muted/50 p-4 rounded-lg">
               <p className="text-xs text-muted-foreground">
-                <strong>Note:</strong> After updating the API key, the virtual try-on feature will automatically use the new key. 
-                No code changes or redeployment required.
+                <strong>Note:</strong> Changes to the provider or API key take effect immediately across all virtual try-on features.
               </p>
             </div>
           </div>
