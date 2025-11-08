@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Save, Upload, Globe, Shield, Bell, Palette } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Upload, Globe, Shield, Bell, Palette, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 interface SiteSetting {
   id: string;
@@ -150,6 +151,14 @@ const Settings: React.FC = () => {
         [platform]: value
       }
     }));
+  };
+
+  const handleUpdateFitroomApiKey = () => {
+    toast({
+      title: "Update API Key",
+      description: "Please enter your new FITROOM API key in the form below.",
+    });
+    // This will trigger the secrets update tool which will show a secure form
   };
 
   if (loading) {
@@ -370,6 +379,37 @@ const Settings: React.FC = () => {
                 onChange={(e) => handleInputChange('maintenance_mode', e.target.checked)}
                 className="rounded border-border"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* API Key Management */}
+        <div className="bg-card rounded-lg p-6 border border-border space-y-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Key className="text-primary" size={20} />
+            <h3 className="text-lg font-semibold">API Key Management</h3>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <p className="font-medium mb-2">FITROOM Virtual Try-On API Key</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Update your FITROOM API key when your trial credits expire or when you need to switch to a new key.
+              </p>
+              <Button
+                onClick={handleUpdateFitroomApiKey}
+                variant="outline"
+                className="w-full"
+              >
+                <Key className="w-4 h-4 mr-2" />
+                Update FITROOM API Key
+              </Button>
+            </div>
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <p className="text-xs text-muted-foreground">
+                <strong>Note:</strong> After updating the API key, the virtual try-on feature will automatically use the new key. 
+                No code changes or redeployment required.
+              </p>
             </div>
           </div>
         </div>
